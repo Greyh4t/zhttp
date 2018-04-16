@@ -184,13 +184,15 @@ func createTransport(ro RequestOptions) *http.Transport {
 	return transport
 }
 
-func buildClient(ro RequestOptions) *http.Client {
+func buildClient(ro RequestOptions, cookieJar http.CookieJar) *http.Client {
 	if ro.DialTimeout == 0 {
 		ro.DialTimeout = 10 * time.Second
 	}
 
 	// The function does not return an error ever... so we are just ignoring it
-	cookieJar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	if cookieJar == nil {
+		cookieJar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	}
 
 	client := &http.Client{
 		Jar:       cookieJar,
@@ -349,7 +351,7 @@ func createBasicRequest(method, urlStr string, ro *RequestOptions) (*http.Reques
 	return req, nil
 }
 
-func doRequest(method, urlStr string, ro *RequestOptions) (*Response, error) {
+func doRequest(method, urlStr string, ro *RequestOptions, cookieJar http.CookieJar) (*Response, error) {
 	if ro == nil {
 		ro = &RequestOptions{}
 	}
@@ -370,7 +372,7 @@ func doRequest(method, urlStr string, ro *RequestOptions) (*Response, error) {
 	addCookies(req, ro)
 	addHeaders(req, ro)
 
-	client := buildClient(*ro)
+	client := buildClient(*ro, cookieJar)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -458,7 +460,6 @@ func addHeaders(req *http.Request, ro *RequestOptions) {
 func addCookies(req *http.Request, ro *RequestOptions) {
 	if ro.RawCookie != "" {
 		req.Header.Set("Cookie", ro.RawCookie)
-		return
 	}
 	for k, v := range ro.Cookies {
 		req.AddCookie(&http.Cookie{Name: k, Value: v})
