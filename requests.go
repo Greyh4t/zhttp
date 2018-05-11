@@ -392,27 +392,20 @@ func buildURL(urlStr string, ro *RequestOptions) (string, error) {
 	if ro.RawQuery != "" {
 		parsedURL.RawQuery = ro.RawQuery
 	} else {
-		var rawQuery string
 		if parsedURL.RawQuery != "" {
-			var err error
-			rawQuery, err = url.QueryUnescape(parsedURL.RawQuery)
-			if err != nil {
-				return "", err
-			}
-			rawQuery = escapeRawQuery(rawQuery)
+			parsedURL.RawQuery = escapeRawQuery(parsedURL.RawQuery)
 		}
 		if len(ro.Params) > 0 {
 			query := url.Values{}
 			for key, value := range ro.Params {
 				query.Set(key, value)
 			}
-			if rawQuery != "" {
-				rawQuery += "&" + query.Encode()
+			if parsedURL.RawQuery != "" {
+				parsedURL.RawQuery += "&" + query.Encode()
 			} else {
-				rawQuery = query.Encode()
+				parsedURL.RawQuery = query.Encode()
 			}
 		}
-		parsedURL.RawQuery = rawQuery
 	}
 
 	return parsedURL.String(), nil
@@ -481,51 +474,66 @@ func encodePostValues(postValues map[string]string) string {
 }
 
 func escapeRawQuery(s string) string {
-	spaceCount, hexCount := 0, 0
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if shouldEscape(c) {
-			if c == ' ' {
-				spaceCount++
+	var r string
+	for i := 0; i < len(s); {
+		switch s[i] {
+		case '%':
+			if i+2 >= len(s) || !ishex(s[i+1]) || !ishex(s[i+2]) {
+				r += string(int(s[i]))
+				i++
 			} else {
-				hexCount++
+				c := unhex(s[i+1])<<4 | unhex(s[i+2])
+				if shouldEscape(c) {
+					r += s[i : i+3]
+				} else {
+					r += string(int(c))
+				}
+				i += 3
 			}
-		}
-	}
-
-	if spaceCount == 0 && hexCount == 0 {
-		return s
-	}
-
-	t := make([]byte, len(s)+2*hexCount)
-	j := 0
-	for i := 0; i < len(s); i++ {
-		switch c := s[i]; {
-		case c == ' ':
-			t[j] = '+'
-			j++
-		case shouldEscape(c):
-			t[j] = '%'
-			t[j+1] = "0123456789ABCDEF"[c>>4]
-			t[j+2] = "0123456789ABCDEF"[c&15]
-			j += 3
 		default:
-			t[j] = s[i]
-			j++
+			if shouldEscape(s[i]) {
+				r += "%" + string(int("0123456789ABCDEF"[s[i]>>4])) + string(int("0123456789ABCDEF"[s[i]&15]))
+			} else {
+				r += string(int(s[i]))
+			}
+			i++
 		}
 	}
-	return string(t)
+
+	return r
+}
+
+func ishex(c byte) bool {
+	switch {
+	case '0' <= c && c <= '9':
+		return true
+	case 'a' <= c && c <= 'f':
+		return true
+	case 'A' <= c && c <= 'F':
+		return true
+	}
+	return false
+}
+
+func unhex(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	}
+	return 0
 }
 
 func shouldEscape(c byte) bool {
 	if 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || '0' <= c && c <= '9' {
 		return false
 	}
-
 	switch c {
-	case '-', '_', '.', '~', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '=', '?', '@', '[', ']':
+	case '!', '#', '$', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '=', '?', '@', '[', ']', '-', '.', '_', '~':
 		return false
 	}
-
 	return true
 }
