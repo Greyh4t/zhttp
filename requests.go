@@ -185,8 +185,12 @@ func createTransport(ro RequestOptions) *http.Transport {
 }
 
 func buildClient(ro RequestOptions, cookieJar http.CookieJar) *http.Client {
-	if ro.DialTimeout == 0 {
-		ro.DialTimeout = 10 * time.Second
+	if ro.DialTimeout <= 0 {
+		if ro.RequestTimeout > 0 {
+			ro.DialTimeout = ro.RequestTimeout
+		} else {
+			ro.DialTimeout = 10 * time.Second
+		}
 	}
 
 	// The function does not return an error ever... so we are just ignoring it
