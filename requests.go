@@ -3,6 +3,8 @@ package zhttp
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -52,10 +54,10 @@ type RequestOptions struct {
 	Files []FileUpload
 
 	// JSON can be used when you wish to send JSON within the request body
-	JSON string
+	JSON interface{}
 
 	// XML can be used if you wish to send XML within the request body
-	XML string
+	XML interface{}
 
 	// Headers if you want to add custom HTTP headers to the request,
 	// this is your friend
@@ -152,10 +154,10 @@ func createTransport(ro RequestOptions) *http.Transport {
 		IdleConnTimeout:       5 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		Proxy:              ro.proxySettings,
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: ro.InsecureSkipVerify},
-		DisableCompression: ro.DisableCompression,
-		DisableKeepAlives:  true,
+		Proxy:                 ro.proxySettings,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: ro.InsecureSkipVerify},
+		DisableCompression:    ro.DisableCompression,
+		DisableKeepAlives:     true,
 	}
 
 	if dnsCache != nil {
@@ -238,7 +240,21 @@ func buildRequest(method, urlStr string, ro *RequestOptions) (*http.Request, err
 }
 
 func createBasicJSONRequest(method, urlStr string, ro *RequestOptions) (*http.Request, error) {
-	req, err := http.NewRequest(method, urlStr, strings.NewReader(ro.JSON))
+	var reader io.Reader
+	switch v := ro.JSON.(type) {
+	case string:
+		reader = strings.NewReader(v)
+	case []byte:
+		reader = bytes.NewReader(v)
+	default:
+		jsonB, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(jsonB)
+	}
+
+	req, err := http.NewRequest(method, urlStr, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +265,21 @@ func createBasicJSONRequest(method, urlStr string, ro *RequestOptions) (*http.Re
 }
 
 func createBasicXMLRequest(method, urlStr string, ro *RequestOptions) (*http.Request, error) {
-	req, err := http.NewRequest(method, urlStr, strings.NewReader(ro.XML))
+	var reader io.Reader
+	switch v := ro.XML.(type) {
+	case string:
+		reader = strings.NewReader(v)
+	case []byte:
+		reader = bytes.NewReader(v)
+	default:
+		xmlB, err := xml.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(xmlB)
+	}
+
+	req, err := http.NewRequest(method, urlStr, reader)
 	if err != nil {
 		return nil, err
 	}
