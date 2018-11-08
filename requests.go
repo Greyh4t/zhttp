@@ -220,11 +220,11 @@ func buildRequest(method, urlStr string, ro *RequestOptions) (*http.Request, err
 		return http.NewRequest(method, urlStr, strings.NewReader(ro.RawData))
 	}
 
-	if ro.JSON != "" {
+	if ro.JSON != nil {
 		return createBasicJSONRequest(method, urlStr, ro)
 	}
 
-	if ro.XML != "" {
+	if ro.XML != nil {
 		return createBasicXMLRequest(method, urlStr, ro)
 	}
 
