@@ -78,6 +78,7 @@ type RequestOptions struct {
 	Hosts string
 
 	ContentType string
+	UserAgent   string
 
 	// Auth allows you to specify a user name and password that you wish to
 	// use when requesting the URL. It will use basic HTTP authentication
@@ -481,6 +482,10 @@ func addHeaders(req *http.Request, ro *RequestOptions) {
 
 	if ro.ContentType != "" {
 		req.Header.Set("Content-Type", ro.ContentType)
+	}
+
+	if ro.UserAgent != "" {
+		req.Header.Set("User-Agent", ro.UserAgent)
 	}
 }
 
