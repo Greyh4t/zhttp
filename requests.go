@@ -462,8 +462,6 @@ func parseHosts(req *http.Request, ro *RequestOptions) {
 // 1. Authorization Headers
 // 2. Any other header requested
 func addHeaders(req *http.Request, ro *RequestOptions) {
-	req.Header.Set("User-Agent", "Zhttp/1.0")
-
 	for key, value := range ro.Headers {
 		req.Header.Set(key, value)
 	}
@@ -486,6 +484,8 @@ func addHeaders(req *http.Request, ro *RequestOptions) {
 
 	if ro.UserAgent != "" {
 		req.Header.Set("User-Agent", ro.UserAgent)
+	} else {
+		req.Header.Set("User-Agent", "Zhttp/1.0")
 	}
 }
 
