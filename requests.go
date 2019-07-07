@@ -485,7 +485,9 @@ func addHeaders(req *http.Request, ro *RequestOptions) {
 	if ro.UserAgent != "" {
 		req.Header.Set("User-Agent", ro.UserAgent)
 	} else {
-		req.Header.Set("User-Agent", "Zhttp/1.0")
+		if ro.Headers["User-Agent"] == "" {
+			req.Header.Set("User-Agent", "Zhttp/1.0")
+		}
 	}
 }
 
