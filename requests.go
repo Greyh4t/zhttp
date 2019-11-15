@@ -62,14 +62,13 @@ func (z *Zhttp) createTransport(options *HttpOptions) *http.Transport {
 	if options.DialTimeout > 0 {
 		dialer.Timeout = options.DialTimeout
 	}
-	if options.DialKeepAlive > 0 {
-		dialer.KeepAlive = options.DialTimeout
+	if options.KeepAlive > 0 {
+		dialer.KeepAlive = options.KeepAlive
 	}
 
 	transport.Proxy = func(req *http.Request) (*url.URL, error) {
 		reqOptions, ok := req.Context().Value("options").(*ReqOptions)
 		if ok && len(reqOptions.Proxies) > 0 {
-			// 检查是否有对应协议的代理
 			if p, ok := reqOptions.Proxies[req.URL.Scheme]; ok {
 				return p, nil
 			}
@@ -78,7 +77,7 @@ func (z *Zhttp) createTransport(options *HttpOptions) *http.Transport {
 				return p, nil
 			}
 		}
-		// 从环境变量获取代理
+		// get proxy from environment
 		return http.ProxyFromEnvironment(req)
 	}
 
