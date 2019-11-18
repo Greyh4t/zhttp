@@ -1,7 +1,6 @@
 package zhttp
 
 import (
-	"bytes"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -108,41 +107,4 @@ func (resp *Response) GetCookie(name string) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-// RawRequest return the last request in string
-// Notice, the order of the headers is not correct
-func (resp *Response) RawRequest() string {
-	var rawRequest bytes.Buffer
-	rawRequest.WriteString(resp.RawResponse.Request.Method + " " + resp.RawResponse.Request.URL.RequestURI() +
-		" " + resp.RawResponse.Request.Proto + "\r\n")
-
-	if resp.RawResponse.Request.Host != "" {
-		rawRequest.WriteString("Host: " + resp.RawResponse.Request.Host + "\r\n")
-	} else {
-		rawRequest.WriteString("Host: " + resp.RawResponse.Request.URL.Host + "\r\n")
-	}
-
-	for key, val := range resp.RawResponse.Request.Header {
-		rawRequest.WriteString(key + ": " + val[0] + "\r\n")
-	}
-
-	rawRequest.WriteString("\r\n")
-	rawRequest.Write(resp.reqBody())
-
-	return rawRequest.String()
-}
-
-func (resp *Response) reqBody() []byte {
-	if resp.RawResponse.Request.GetBody != nil {
-		rc, err := resp.RawResponse.Request.GetBody()
-		if err == nil {
-			body, err := ioutil.ReadAll(rc)
-			rc.Close()
-			if err == nil {
-				return body
-			}
-		}
-	}
-	return nil
 }
