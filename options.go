@@ -11,6 +11,12 @@ type Auth struct {
 }
 
 type HttpOptions struct {
+	// UserAgent allows you to set an arbitrary custom user agent
+	// if ReqOptions.UserAgent or ReqOptions.Headers["User-Agent"] not empty, this option will be overwrite
+	UserAgent string
+	// Headers uses to set custom HTTP headers to every request
+	// Headers that are repeated with ReqOptions.Headers will be overwrite
+	Headers map[string]string
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080
 	// effective on every request

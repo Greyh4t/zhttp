@@ -213,6 +213,16 @@ func (z *Zhttp) parseHosts(req *http.Request, options *ReqOptions) (string, bool
 
 // addHeaders handle custom headers
 func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
+	req.Header.Set("User-Agent", "Zhttp/2.0")
+
+	for key, value := range z.options.Headers {
+		req.Header.Set(key, value)
+	}
+
+	if z.options.UserAgent != "" {
+		req.Header.Set("User-Agent", z.options.UserAgent)
+	}
+
 	for key, value := range options.Headers {
 		req.Header.Set(key, value)
 	}
@@ -235,10 +245,6 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 
 	if options.UserAgent != "" {
 		req.Header.Set("User-Agent", options.UserAgent)
-	} else {
-		if req.Header.Get("User-Agent") == "" {
-			req.Header.Set("User-Agent", "Zhttp/2.0")
-		}
 	}
 }
 

@@ -22,11 +22,17 @@ import (
 	"net/url"
 	"os"
 	"time"
+
 	"github.com/Greyh4t/zhttp"
 )
 
 func main() {
 	z := zhttp.New(&zhttp.HttpOptions{
+		UserAgent: "global-useragent",
+		Headers: map[string]string{
+			"globalheader1": "value1",
+			"globalheader2": "value2",
+		},
 		DNSCacheExpire:      time.Minute * 10,
 		DNSServer:           "8.8.8.8:25",
 		InsecureSkipVerify:  true,
@@ -56,13 +62,17 @@ func main() {
 			"http":  zhttp.MustProxy("http://127.0.0.1:8080"),
 			"https": zhttp.MustProxy("http://127.0.0.1:8080"),
 		},
-		Body: zhttp.Form(map[string]string{
-			"key1": "value1",
-			"key2": "value2",
-		}),
+		Headers: map[string]string{
+			"header1": "value1",
+			"header2": "value2",
+		},
 		Cookie: zhttp.PairsCookie(map[string]string{
 			"k1": "v1",
 			"k2": "v2",
+		}),
+		Body: zhttp.Form(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
 		}),
 		Query: zhttp.PairsQuery(map[string]string{
 			"query1": "value1",
