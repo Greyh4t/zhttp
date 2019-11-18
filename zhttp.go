@@ -20,6 +20,7 @@ func New(options *HttpOptions) *Zhttp {
 	if z.options == nil {
 		z.options = &HttpOptions{}
 	}
+
 	if z.options.DNSCacheExpire > 0 {
 		if z.options.DNSServer != "" {
 			z.dnsCache = dnscache.NewCustomServer(z.options.DNSCacheExpire, z.options.DNSServer)
@@ -28,6 +29,24 @@ func New(options *HttpOptions) *Zhttp {
 		}
 		ensureDNSCacheFinalized(z.dnsCache)
 	}
+
+	z.transport = z.createTransport(z.options)
+	ensureTransporterFinalized(z.transport)
+	return z
+}
+
+// NewWithDNSCache generate an *Zhttp client that uses an external DNSCache
+// This function will ignore HttpOptions.DNSCacheExpire and HttpOptions.DNSServer
+func NewWithDNSCache(options *HttpOptions, cache *dnscache.Resolver) *Zhttp {
+	z := &Zhttp{options: options}
+	if z.options == nil {
+		z.options = &HttpOptions{}
+	}
+
+	if cache != nil {
+		z.dnsCache = cache
+	}
+
 	z.transport = z.createTransport(z.options)
 	ensureTransporterFinalized(z.transport)
 	return z
