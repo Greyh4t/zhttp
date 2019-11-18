@@ -1,4 +1,4 @@
-module github.com/Greyh4t/zhttp
+module github.com/greyh4t/zhttp
 
 go 1.13
 

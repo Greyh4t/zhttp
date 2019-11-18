@@ -7,7 +7,7 @@ zhttp 是一个对 net/http 标准库的封装，参考了 python 中著名的 r
 ## Installation
 
 ```
-go get github.com/Greyh4t/zhttp
+go get github.com/greyh4t/zhttp
 ```
 
 ## Example
@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Greyh4t/zhttp"
+	"github.com/greyh4t/zhttp"
 )
 
 func main() {
