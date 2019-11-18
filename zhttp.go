@@ -1,7 +1,7 @@
 package zhttp
 
 import (
-	"github.com/Greyh4t/dnscache"
+	"github.com/greyh4t/dnscache"
 	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
