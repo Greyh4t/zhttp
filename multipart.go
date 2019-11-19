@@ -25,8 +25,8 @@ type File struct {
 	Mime string
 }
 
-// Multipart used to create multipart body object
-func Multipart(files []*File, form map[string]string) *MultipartBody {
+// Multipart used to create Body object
+func Multipart(files []*File, form map[string]string) Body {
 	return &MultipartBody{
 		Files: files,
 		Form:  form,
