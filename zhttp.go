@@ -102,3 +102,37 @@ func (z *Zhttp) Put(url string, options *ReqOptions) (*Response, error) {
 func (z *Zhttp) Options(url string, options *ReqOptions) (*Response, error) {
 	return z.doRequest("OPTIONS", url, options, nil)
 }
+
+var z = New(nil)
+
+func Request(method, url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest(method, url, options, nil)
+}
+
+func Get(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("GET", url, options, nil)
+}
+
+func  Delete(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("DELETE", url, options, nil)
+}
+
+func  Head(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("HEAD", url, options, nil)
+}
+
+func Patch(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("PATCH", url, options, nil)
+}
+
+func Post(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("POST", url, options, nil)
+}
+
+func  Put(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("PUT", url, options, nil)
+}
+
+func Options(url string, options *ReqOptions) (*Response, error) {
+	return z.doRequest("OPTIONS", url, options, nil)
+}
