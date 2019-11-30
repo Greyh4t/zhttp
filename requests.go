@@ -98,25 +98,25 @@ func (z *Zhttp) createTransport(options *HttpOptions) *http.Transport {
 }
 
 // doRequest send request with http client to server
-func (z *Zhttp) doRequest(method, rawUrl string, options *ReqOptions, jar http.CookieJar) (*Response, error) {
+func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.CookieJar) (*Response, error) {
 	if options == nil {
 		options = &ReqOptions{}
 	}
 
-	rawUrl, err := z.buildURL(rawUrl, options)
+	rawURL, err := z.buildURL(rawURL, options)
 	if err != nil {
 		return nil, err
 	}
 
 	ctx := context.Background()
+	var cancel context.CancelFunc
 	if options.Timeout > 0 {
-		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-		defer cancel()
 	}
 
-	req, err := z.buildRequest(ctx, method, rawUrl, options)
+	req, err := z.buildRequest(ctx, method, rawURL, options)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -132,6 +132,7 @@ func (z *Zhttp) doRequest(method, rawUrl string, options *ReqOptions, jar http.C
 	}
 
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -140,17 +141,18 @@ func (z *Zhttp) doRequest(method, rawUrl string, options *ReqOptions, jar http.C
 		StatusCode:    resp.StatusCode,
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
+		canel:         cancel,
 	}, nil
 }
 
 // buildRequest build request with body and other
-func (z *Zhttp) buildRequest(ctx context.Context, method, rawUrl string, options *ReqOptions) (*http.Request, error) {
+func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options *ReqOptions) (*http.Request, error) {
 	if options.DisableRedirect || len(options.Proxies) > 0 {
 		ctx = context.WithValue(ctx, "options", options)
 	}
 
 	if options.Body == nil {
-		return http.NewRequestWithContext(ctx, method, rawUrl, nil)
+		return http.NewRequestWithContext(ctx, method, rawURL, nil)
 	}
 
 	if body, ok := options.Body.(*MultipartBody); ok {
@@ -162,7 +164,7 @@ func (z *Zhttp) buildRequest(ctx context.Context, method, rawUrl string, options
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, rawUrl, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, rawURL, bodyReader)
 	if err != nil {
 		return nil, err
 	}

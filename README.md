@@ -82,6 +82,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	body := resp.Byte()
+	if resp.Error != nil{
+		log.Fatal(resp.Error)
+	}
 	resp.Close()
 
 	// 请求3 post表单

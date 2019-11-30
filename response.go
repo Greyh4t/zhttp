@@ -1,6 +1,7 @@
 package zhttp
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,14 +13,15 @@ type Response struct {
 	Status        string
 	ContentLength int64
 	RawResponse   *http.Response
-	Err           error
+	Error         error
+	canel         context.CancelFunc
 }
 
 // String return the body in string type
 func (resp *Response) String() string {
 	data, err := ioutil.ReadAll(resp.RawResponse.Body)
 	if err != nil {
-		resp.Err = err
+		resp.Error = err
 		return ""
 	}
 	return string(data)
@@ -29,7 +31,7 @@ func (resp *Response) String() string {
 func (resp *Response) Byte() []byte {
 	data, err := ioutil.ReadAll(resp.RawResponse.Body)
 	if err != nil {
-		resp.Err = err
+		resp.Error = err
 		return nil
 	}
 	return data
@@ -41,8 +43,11 @@ func (resp *Response) ReadN(n int64) []byte {
 	return body
 }
 
-// Close close the body
+// Close close the body. Must be called when the response is used
 func (resp *Response) Close() error {
+	if resp.canel != nil {
+		resp.canel()
+	}
 	return resp.RawResponse.Body.Close()
 }
 
