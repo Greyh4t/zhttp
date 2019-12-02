@@ -19,7 +19,6 @@ package main
 
 import (
 	"log"
-	"net/url"
 	"os"
 	"time"
 
@@ -58,10 +57,10 @@ func main() {
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
 		DisableRedirect: true,
 		Timeout:         time.Second * 10,
-		Proxies: map[string]*url.URL{
-			"http":  zhttp.MustProxy("http://127.0.0.1:8080"),
-			"https": zhttp.MustProxy("http://127.0.0.1:8080"),
-		},
+		Proxies: zhttp.MustProxy(map[string]string{
+			"http":  "http://127.0.0.1:8080",
+			"https": "http://127.0.0.1:8080",
+		}),
 		Headers: map[string]string{
 			"header1": "value1",
 			"header2": "value2",
@@ -87,6 +86,7 @@ func main() {
 		log.Fatal(resp.Error)
 	}
 	resp.Close()
+	log.Println(body)
 
 	// 请求3 post表单
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{

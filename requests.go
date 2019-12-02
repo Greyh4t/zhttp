@@ -108,15 +108,8 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	ctx := context.Background()
-	var cancel context.CancelFunc
-	if options.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-	}
-
-	req, err := z.buildRequest(ctx, method, rawURL, options)
+	req, err := z.buildRequest(method, rawURL, options)
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
@@ -126,13 +119,16 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 	z.addCookies(req, options)
 
 	client := z.buildClient(z.options, jar)
+	if options.Timeout > 0 {
+		client.Timeout = options.Timeout
+	}
+
 	resp, err := client.Do(req)
 	if set {
 		req.URL.Host = oldHost
 	}
 
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
@@ -141,22 +137,18 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		StatusCode:    resp.StatusCode,
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
-		canel:         cancel,
 	}, nil
 }
 
 // buildRequest build request with body and other
-func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options *ReqOptions) (*http.Request, error) {
+func (z *Zhttp) buildRequest(method, rawURL string, options *ReqOptions) (*http.Request, error) {
+	ctx := context.Background()
 	if options.DisableRedirect || len(options.Proxies) > 0 {
 		ctx = context.WithValue(ctx, "options", options)
 	}
 
 	if options.Body == nil {
 		return http.NewRequestWithContext(ctx, method, rawURL, nil)
-	}
-
-	if body, ok := options.Body.(*MultipartBody); ok {
-		body.withContext(ctx)
 	}
 
 	bodyReader, contentType, err := options.Body.Reader()

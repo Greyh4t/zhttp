@@ -1,7 +1,6 @@
 package zhttp
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -36,7 +35,6 @@ func Multipart(files []*File, form map[string]string) Body {
 type MultipartBody struct {
 	Files []*File
 	Form  map[string]string
-	ctx   context.Context
 }
 
 func (body *MultipartBody) Close() {
@@ -45,10 +43,6 @@ func (body *MultipartBody) Close() {
 			f.Contents.Close()
 		}
 	}
-}
-
-func (body *MultipartBody) withContext(ctx context.Context) {
-	body.ctx = ctx
 }
 
 func (body *MultipartBody) Reader() (io.Reader, string, error) {
@@ -92,7 +86,7 @@ func (body *MultipartBody) Reader() (io.Reader, string, error) {
 			}
 
 			if f.Contents != nil {
-				err = copyWithContext(body.ctx, writer, f.Contents)
+				_, err = io.Copy(writer, f.Contents)
 				if err != nil && err != io.EOF {
 					return
 				}

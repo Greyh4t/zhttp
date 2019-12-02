@@ -1,7 +1,6 @@
 package zhttp
 
 import (
-	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +13,6 @@ type Response struct {
 	ContentLength int64
 	RawResponse   *http.Response
 	Error         error
-	canel         context.CancelFunc
 }
 
 // String return the body in string type
@@ -45,14 +43,11 @@ func (resp *Response) ReadN(n int64) []byte {
 
 // Close close the body. Must be called when the response is used
 func (resp *Response) Close() error {
-	if resp.canel != nil {
-		resp.canel()
-	}
 	return resp.RawResponse.Body.Close()
 }
 
 /* RawHeaders return the headers in string type
-like this form
+like this
 header1: value1,value11
 header2: value2
 */
@@ -73,8 +68,7 @@ func (resp *Response) HeadersMap() map[string]string {
 	return headers
 }
 
-// GetHeader return a specific header
-// If header not exist, return empty string and false
+// GetHeader return a specific header. If header not exist, return empty string and false
 func (resp *Response) GetHeader(name string) (string, bool) {
 	for k, v := range resp.RawResponse.Header {
 		if k == name {
@@ -103,8 +97,7 @@ func (resp *Response) CookiesMap() map[string]string {
 	return cookies
 }
 
-// GetCookie return a specific cookie
-// If cookie not exist, return empty string and false
+// GetCookie return a specific cookie. If cookie not exist, return empty string and false
 func (resp *Response) GetCookie(name string) (string, bool) {
 	for _, cookie := range resp.RawResponse.Cookies() {
 		if cookie.Name == name {

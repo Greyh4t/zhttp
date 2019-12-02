@@ -96,7 +96,7 @@ type HttpOptions struct {
 
 type ReqOptions struct {
 	// Timeout is the maximum amount of time a whole request(include dial / request / redirect) will wait.
-	// if HttpOptions.Timeout non-zero, smaller effective
+	// if non-zero, overwrite HttpOptions.Timeout in current request
 	Timeout time.Duration
 
 	// ContentType allows you to set an arbitrary custom content type
