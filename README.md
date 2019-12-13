@@ -10,6 +10,61 @@ zhttp 是一个对 net/http 标准库的封装，参考了 python 中著名的 r
 go get github.com/greyh4t/zhttp
 ```
 
+## Usage
+
+#### 直接使用默认client
+```
+import "github.com/greyh4t/zhttp"
+
+func main() {
+	resp, err := zhttp.Get("http://www.example.com/", nil)
+	if err != nil {
+		return
+	}
+	resp.Close()
+}
+```
+
+#### 更改默认client配置
+```
+import "github.com/greyh4t/zhttp"
+
+func main() {
+	zhttp.InitDefaultClient(&zhttp.HttpOptions{
+		Proxies: zhttp.MustProxy(map[string]string{
+			"http":  "http://127.0.0.1:8080",
+			"https": "http://127.0.0.1:8080",
+		}),
+	})
+
+	resp, err := zhttp.Get("http://www.example.com/", nil)
+	if err != nil {
+		return
+	}
+	resp.Close()
+}
+```
+
+#### 创建独立的client使用
+```
+import "github.com/greyh4t/zhttp"
+
+func main() {
+	z := zhttp.New(&zhttp.HttpOptions{
+		Proxies: zhttp.MustProxy(map[string]string{
+			"http":  "http://127.0.0.1:8080",
+			"https": "http://127.0.0.1:8080",
+		}),
+	})
+
+	resp, err := z.Get("http://www.example.com/", nil)
+	if err != nil {
+		return
+	}
+	resp.Close()
+}
+```
+
 ## Example
 
 如下为简单示例，更多使用方法请参考godoc
