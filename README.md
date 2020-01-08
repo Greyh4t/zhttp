@@ -13,7 +13,7 @@ go get github.com/greyh4t/zhttp
 ## Usage
 
 #### 直接使用默认client
-```
+```go
 import "github.com/greyh4t/zhttp"
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 ```
 
 #### 更改默认client配置
-```
+```go
 import "github.com/greyh4t/zhttp"
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 ```
 
 #### 创建独立的client使用
-```
+```go
 import "github.com/greyh4t/zhttp"
 
 func main() {
