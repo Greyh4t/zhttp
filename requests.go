@@ -181,7 +181,7 @@ func (z *Zhttp) buildURL(urlStr string, options *ReqOptions) (string, error) {
 		if len(options.Query.Pairs) > 0 {
 			query := parsedURL.Query()
 			for key, value := range options.Query.Pairs {
-				query.Set(key, value)
+				query.Add(key, value)
 			}
 			parsedURL.RawQuery = query.Encode()
 		}
