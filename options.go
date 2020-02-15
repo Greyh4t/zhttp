@@ -33,7 +33,7 @@ type HttpOptions struct {
 	// Timeout is the maximum amount of time a whole request(include dial / request / redirect) will wait.
 	Timeout time.Duration
 
-	// Timeout is the maximum amount of time a dial will wait for a connect to complete.
+	// DialTimeout is the maximum amount of time a dial will wait for a connect to complete.
 	DialTimeout time.Duration
 
 	// TLSHandshakeTimeout specifies the maximum amount of time waiting to
