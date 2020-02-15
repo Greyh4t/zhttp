@@ -115,14 +115,14 @@ type ReqOptions struct {
 	DisableRedirect bool
 
 	// Query will be encode to query string that may be used within a GET request
-	Query Query
+	Query url.Values
 
 	// Body is a interface{} that will eventually convert into the the body of a POST request.
 	Body Body
 
-	// Cookie is an struct that allows you to attach cookies to your request
+	// Cookie allows you to attach cookies to your request
 	// only effective in current request
-	Cookie Cookie
+	Cookies map[string]string
 
 	// Headers uses to set custom HTTP headers to the request
 	Headers map[string]string

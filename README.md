@@ -74,6 +74,7 @@ package main
 
 import (
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -109,7 +110,7 @@ func main() {
 	resp.Close()
 
 	// 请求2 post表单
-	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
+	resp, err = z.Post("http://www.example.com/?query1=value3", &zhttp.ReqOptions{
 		DisableRedirect: true,
 		Timeout:         time.Second * 10,
 		Proxies: zhttp.MustProxy(map[string]string{
@@ -120,18 +121,18 @@ func main() {
 			"header1": "value1",
 			"header2": "value2",
 		},
-		Cookie: zhttp.PairsCookie(map[string]string{
+		Cookies: map[string]string{
 			"k1": "v1",
 			"k2": "v2",
-		}),
+		},
 		Body: zhttp.Form(map[string]string{
 			"key1": "value1",
 			"key2": "value2",
 		}),
-		Query: zhttp.PairsQuery(map[string]string{
-			"query1": "value1",
-			"query2": "value2",
-		}),
+		Query: url.Values{
+			"query1": {"value1"},
+			"query2": {"value2"},
+		},
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -144,10 +145,11 @@ func main() {
 	log.Println(body)
 
 	// 请求3 post表单
-	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
-		Query:     zhttp.RawQuery("query1=value1&query2=value2"),
+	resp, err = z.Post("http://www.example.com/?query1=value1&query2=value2", &zhttp.ReqOptions{
 		Body:      zhttp.RawForm(`fk1=fv1&fk2=fv2`),
-		Cookie:    zhttp.RawCookie("k1=v1; k2=v2"),
+		Headers:    map[string]string{
+			"Cookie":"k1=v1; k2=v2",
+        },
 		UserAgent: "zhttp-ua-test",
 	})
 	if err != nil {
@@ -158,7 +160,9 @@ func main() {
 	// 请求4 post json
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
 		Body:      zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
-		Cookie:    zhttp.RawCookie("k1=v1; k2=v2"),
+		Headers:    map[string]string{
+			"Cookie":"k1=v1; k2=v2",
+        },
 		UserAgent: "zhttp-ua-test",
 		IsAjax:    true,
 	})

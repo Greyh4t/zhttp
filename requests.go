@@ -115,8 +115,8 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 
 	oldHost, set := z.parseHosts(req, options)
 
-	z.addHeaders(req, options)
 	z.addCookies(req, options)
+	z.addHeaders(req, options)
 
 	client := z.buildClient(z.options, jar)
 	if options.Timeout > 0 {
@@ -169,25 +169,23 @@ func (z *Zhttp) buildRequest(method, rawURL string, options *ReqOptions) (*http.
 }
 
 // buildURL make url and set custom query
-func (z *Zhttp) buildURL(urlStr string, options *ReqOptions) (string, error) {
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return "", err
-	}
-
-	if options.Query.Raw != "" {
-		parsedURL.RawQuery = options.Query.Raw
-	} else {
-		if len(options.Query.Pairs) > 0 {
-			query := parsedURL.Query()
-			for key, value := range options.Query.Pairs {
-				query.Add(key, value)
-			}
-			parsedURL.RawQuery = query.Encode()
+func (z *Zhttp) buildURL(rawURL string, options *ReqOptions) (string, error) {
+	if len(options.Query) > 0 {
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			return "", err
 		}
+
+		if parsedURL.RawQuery != "" {
+			parsedURL.RawQuery += "&" + options.Query.Encode()
+		} else {
+			parsedURL.RawQuery = options.Query.Encode()
+		}
+
+		rawURL = parsedURL.String()
 	}
 
-	return parsedURL.String(), nil
+	return rawURL, nil
 }
 
 // parseHosts handle custom dns resolve value
@@ -244,11 +242,7 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 
 // addCookies handle custom cookie
 func (z *Zhttp) addCookies(req *http.Request, options *ReqOptions) {
-	if options.Cookie.Raw != "" {
-		req.Header.Set("Cookie", options.Cookie.Raw)
-	} else {
-		for k, v := range options.Cookie.Pairs {
-			req.AddCookie(&http.Cookie{Name: k, Value: v})
-		}
+	for k, v := range options.Cookies {
+		req.AddCookie(&http.Cookie{Name: k, Value: v})
 	}
 }
