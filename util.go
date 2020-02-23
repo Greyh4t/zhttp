@@ -98,3 +98,25 @@ func RawHTTPResponse(resp *http.Response) string {
 	rawResponse.Write(buf)
 	return rawResponse.String()
 }
+
+func CookieFromRaw(rawCookie string, domain string) ([]*http.Cookie) {
+	list := strings.Split(rawCookie, ";")
+	if len(list) == 0 {
+		return nil
+	}
+
+	cookies := make([]*http.Cookie, len(list))
+	for i, item := range list {
+		pairs := strings.SplitN(strings.TrimSpace(item), "=", 2)
+		cookie := &http.Cookie{
+			Name:   pairs[0],
+			Domain: domain,
+		}
+
+		if len(pairs) == 2 {
+			cookie.Value = pairs[1]
+		}
+		cookies[i] = cookie
+	}
+	return cookies
+}
