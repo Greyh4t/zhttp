@@ -4,6 +4,8 @@ import (
 	"net/http/cookiejar"
 )
 
+// Session is a client used to send http requests.
+// Unlike Zhttp, it handle session for all requests
 type Session struct {
 	*Zhttp
 	CookieJar *cookiejar.Jar

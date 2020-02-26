@@ -3,16 +3,17 @@ package zhttp
 import (
 	"context"
 	"crypto/tls"
-	"golang.org/x/net/publicsuffix"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 // buildClient make a new client
-func (z *Zhttp) buildClient(options *HttpOptions, cookieJar http.CookieJar) *http.Client {
+func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *http.Client {
 	if cookieJar == nil {
 		cookieJar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	}
@@ -35,7 +36,7 @@ func (z *Zhttp) buildClient(options *HttpOptions, cookieJar http.CookieJar) *htt
 }
 
 // createTransport create a global *http.Transport for all http client
-func (z *Zhttp) createTransport(options *HttpOptions) *http.Transport {
+func (z *Zhttp) createTransport(options *HTTPOptions) *http.Transport {
 	transport := http.DefaultTransport.(*http.Transport)
 	transport.MaxIdleConnsPerHost = options.MaxIdleConnsPerHost
 	transport.MaxConnsPerHost = options.MaxConnsPerHost
@@ -113,7 +114,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	oldHost, set := z.parseHosts(req, options)
+	oldHost, set := z.parseIPOfDomain(req, options)
 
 	z.addCookies(req, options)
 	z.addHeaders(req, options)
@@ -188,15 +189,15 @@ func (z *Zhttp) buildURL(rawURL string, options *ReqOptions) (string, error) {
 	return rawURL, nil
 }
 
-// parseHosts handle custom dns resolve value
-func (z *Zhttp) parseHosts(req *http.Request, options *ReqOptions) (string, bool) {
-	if options.Hosts != "" {
+// parseIPOfDomain handle custom dns resolution
+func (z *Zhttp) parseIPOfDomain(req *http.Request, options *ReqOptions) (string, bool) {
+	if options.IPOfDomain != "" {
 		oldHost := req.URL.Host
 		port := req.URL.Port()
 		if port != "" {
-			req.URL.Host = options.Hosts + ":" + port
+			req.URL.Host = options.IPOfDomain + ":" + port
 		} else {
-			req.URL.Host = options.Hosts
+			req.URL.Host = options.IPOfDomain
 		}
 		return oldHost, true
 	}
@@ -240,7 +241,7 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 	}
 }
 
-// addCookies handle custom cookie
+// addCookies handle custom cookies
 func (z *Zhttp) addCookies(req *http.Request, options *ReqOptions) {
 	for k, v := range options.Cookies {
 		req.AddCookie(&http.Cookie{Name: k, Value: v})

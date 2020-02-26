@@ -34,7 +34,8 @@ func FileFromDisk(filePath string) (*File, error) {
 	return file, nil
 }
 
-// MustProxy convert scheme and url string to map[string]*url.URL, if there has an error, will panic
+// MustProxy convert scheme and url string to map[string]*url.URL.
+// If there have any error, will panic
 func MustProxy(proxies map[string]string) map[string]*url.URL {
 	if len(proxies) > 0 {
 		proxiesMap := map[string]*url.URL{}
@@ -50,7 +51,8 @@ func MustProxy(proxies map[string]string) map[string]*url.URL {
 	return nil
 }
 
-// RawHTTPRequest format the http.Request to string. Notice, the order of the headers is not correct
+// RawHTTPRequest format the http.Request to string.
+// Notice, the order of headers is not strictly consistent
 func RawHTTPRequest(req *http.Request) string {
 	var rawRequest bytes.Buffer
 	rawRequest.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
@@ -85,7 +87,8 @@ func reqBody(req *http.Request) []byte {
 	return nil
 }
 
-// RawHTTPResponse format the http.Response to string. Notice, the order of the headers is not correct
+// RawHTTPResponse format the http.Response to string.
+// Notice, the order of headers is not strictly consistent
 func RawHTTPResponse(resp *http.Response) string {
 	var rawResponse bytes.Buffer
 	rawResponse.WriteString(resp.Proto + " " + resp.Status + "\r\n")
@@ -99,7 +102,8 @@ func RawHTTPResponse(resp *http.Response) string {
 	return rawResponse.String()
 }
 
-func CookieFromRaw(rawCookie string, domain string) ([]*http.Cookie) {
+// CookieFromRaw parses a cookie in string format to []*http.Cookie
+func CookieFromRaw(rawCookie string, domain string) []*http.Cookie {
 	list := strings.Split(rawCookie, ";")
 	if len(list) == 0 {
 		return nil

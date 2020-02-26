@@ -30,7 +30,7 @@ func main() {
 import "github.com/greyh4t/zhttp"
 
 func main() {
-	zhttp.InitDefaultClient(&zhttp.HttpOptions{
+	zhttp.InitDefaultClient(&zhttp.HTTPOptions{
 		Proxies: zhttp.MustProxy(map[string]string{
 			"http":  "http://127.0.0.1:8080",
 			"https": "http://127.0.0.1:8080",
@@ -50,7 +50,7 @@ func main() {
 import "github.com/greyh4t/zhttp"
 
 func main() {
-	z := zhttp.New(&zhttp.HttpOptions{
+	z := zhttp.New(&zhttp.HTTPOptions{
 		Proxies: zhttp.MustProxy(map[string]string{
 			"http":  "http://127.0.0.1:8080",
 			"https": "http://127.0.0.1:8080",
@@ -82,7 +82,7 @@ import (
 )
 
 func main() {
-	z := zhttp.New(&zhttp.HttpOptions{
+	z := zhttp.New(&zhttp.HTTPOptions{
 		UserAgent: "global-useragent",
 		Headers: map[string]string{
 			"globalheader1": "value1",
@@ -149,7 +149,7 @@ func main() {
 		Body:      zhttp.RawForm(`fk1=fv1&fk2=fv2`),
 		Headers:    map[string]string{
 			"Cookie":"k1=v1; k2=v2",
-        },
+		},
 		UserAgent: "zhttp-ua-test",
 	})
 	if err != nil {
@@ -162,7 +162,7 @@ func main() {
 		Body:      zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
 		Headers:    map[string]string{
 			"Cookie":"k1=v1; k2=v2",
-        },
+		},
 		UserAgent: "zhttp-ua-test",
 		IsAjax:    true,
 	})

@@ -9,26 +9,27 @@ import (
 	"strings"
 )
 
+// Body is used to define the body part of the http request
 type Body interface {
 	Reader() (io.Reader, string, error)
 }
 
-// Raw used to create Body object from string, need to set the Content-Type yourself
+// Raw used to create Body from string, need to set the Content-Type yourself
 func Raw(body string) Body {
 	return &StringBody{Body: body}
 }
 
-// RawBytes used to create Body object from []byte, need to set the Content-Type yourself
+// RawBytes used to create Body from []byte, need to set the Content-Type yourself
 func RawBytes(body []byte) Body {
 	return &BytesBody{Body: body}
 }
 
-// RawReader used to create Body object from io.Reader, need to set the Content-Type yourself
+// RawReader used to create Body from io.Reader, need to set the Content-Type yourself
 func RawReader(body io.Reader) Body {
 	return &ReaderBody{Body: body}
 }
 
-// RawJSON used to create Body object from string, and set json Content-Type
+// RawJSON used to create Body from string, and set json Content-Type
 func RawJSON(body string) Body {
 	return &StringBody{
 		ContentType: "application/json",
@@ -36,7 +37,7 @@ func RawJSON(body string) Body {
 	}
 }
 
-// RawBytesJSON used to create Body object from []byte, and set json Content-Type
+// RawBytesJSON used to create Body from []byte, and set json Content-Type
 func RawBytesJSON(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/json",
@@ -44,12 +45,12 @@ func RawBytesJSON(body []byte) Body {
 	}
 }
 
-// JSON used to create Body object from map, struct and so on, and set json Content-Type
+// JSON used to create Body from map, struct and so on, and set json Content-Type
 func JSON(body interface{}) Body {
 	return &JSONBody{body}
 }
 
-// RawXML used to create Body object from string, and set xml Content-Type
+// RawXML used to create Body from string, and set xml Content-Type
 func RawXML(body string) Body {
 	return &StringBody{
 		ContentType: "application/xml",
@@ -57,7 +58,7 @@ func RawXML(body string) Body {
 	}
 }
 
-// RawBytesXML used to create Body object from []byte, and set xml Content-Type
+// RawBytesXML used to create Body from []byte, and set xml Content-Type
 func RawBytesXML(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/xml",
@@ -65,12 +66,12 @@ func RawBytesXML(body []byte) Body {
 	}
 }
 
-// XML used to create Body object from struct, and set xml Content-Type
+// XML used to create Body from struct, and set xml Content-Type
 func XML(body interface{}) Body {
 	return &XMLBody{body}
 }
 
-// RawForm used to create Body object from string, and set form Content-Type
+// RawForm used to create Body from string, and set form Content-Type
 func RawForm(body string) Body {
 	return &StringBody{
 		ContentType: "application/x-www-form-urlencoded",
@@ -78,7 +79,7 @@ func RawForm(body string) Body {
 	}
 }
 
-// RawBytesForm used to create Body object from []byte, and set form Content-Type
+// RawBytesForm used to create Body from []byte, and set form Content-Type
 func RawBytesForm(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/x-www-form-urlencoded",
@@ -86,7 +87,7 @@ func RawBytesForm(body []byte) Body {
 	}
 }
 
-// Form used to create Body object from map, and set form Content-Type
+// Form used to create Body from map, and set form Content-Type
 func Form(body map[string]string) Body {
 	values := &url.Values{}
 	for key, value := range body {

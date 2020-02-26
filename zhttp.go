@@ -1,24 +1,25 @@
 package zhttp
 
 import (
-	"github.com/greyh4t/dnscache"
-	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
 	"runtime"
+
+	"github.com/greyh4t/dnscache"
+	"golang.org/x/net/publicsuffix"
 )
 
 type Zhttp struct {
-	options   *HttpOptions
+	options   *HTTPOptions
 	dnsCache  *dnscache.Resolver
 	transport *http.Transport
 }
 
 // New generate an *Zhttp client to send request
-func New(options *HttpOptions) *Zhttp {
+func New(options *HTTPOptions) *Zhttp {
 	z := &Zhttp{options: options}
 	if z.options == nil {
-		z.options = &HttpOptions{}
+		z.options = &HTTPOptions{}
 	}
 
 	if z.options.DNSCacheExpire > 0 {
@@ -35,12 +36,12 @@ func New(options *HttpOptions) *Zhttp {
 	return z
 }
 
-// NewWithDNSCache generate an *Zhttp client that uses an external DNSCache
-// This function will ignore HttpOptions.DNSCacheExpire and HttpOptions.DNSServer
-func NewWithDNSCache(options *HttpOptions, cache *dnscache.Resolver) *Zhttp {
+// NewWithDNSCache generate an *Zhttp client that uses an external DNSCache.
+// This will ignore HTTPOptions.DNSCacheExpire and HTTPOptions.DNSServer
+func NewWithDNSCache(options *HTTPOptions, cache *dnscache.Resolver) *Zhttp {
 	z := &Zhttp{options: options}
 	if z.options == nil {
-		z.options = &HttpOptions{}
+		z.options = &HTTPOptions{}
 	}
 
 	if cache != nil {
@@ -64,7 +65,7 @@ func ensureTransporterFinalized(httpTransport *http.Transport) {
 	})
 }
 
-// NewSession generate an client that will handle session for all request
+// NewSession generate an client that will handle session for all requests
 func (z *Zhttp) NewSession() *Session {
 	s := &Session{Zhttp: z}
 	s.CookieJar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -106,7 +107,7 @@ func (z *Zhttp) Options(url string, options *ReqOptions) (*Response, error) {
 var defaultZ = New(nil)
 
 // InitDefaultClient initialization the default zhttp client with options
-func InitDefaultClient(options *HttpOptions) {
+func InitDefaultClient(options *HTTPOptions) {
 	defaultZ = New(options)
 }
 

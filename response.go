@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Response is a wrapper for *http.Response
 type Response struct {
 	StatusCode    int
 	Status        string
@@ -18,26 +19,21 @@ type Response struct {
 // String return the body in string type
 func (resp *Response) String() string {
 	data, err := ioutil.ReadAll(resp.RawResponse.Body)
-	if err != nil {
-		resp.Error = err
-		return ""
-	}
+	resp.Error = err
 	return string(data)
 }
 
 // Byte return the body with []byte type
 func (resp *Response) Byte() []byte {
 	data, err := ioutil.ReadAll(resp.RawResponse.Body)
-	if err != nil {
-		resp.Error = err
-		return nil
-	}
+	resp.Error = err
 	return data
 }
 
 // ReadN read and return n byte of body
 func (resp *Response) ReadN(n int64) []byte {
-	body, _ := ioutil.ReadAll(io.LimitReader(resp.RawResponse.Body, n))
+	body, err := ioutil.ReadAll(io.LimitReader(resp.RawResponse.Body, n))
+	resp.Error = err
 	return body
 }
 
@@ -46,11 +42,10 @@ func (resp *Response) Close() error {
 	return resp.RawResponse.Body.Close()
 }
 
-/* RawHeaders return the headers in string type
-like this
-header1: value1,value11
-header2: value2
-*/
+// RawHeaders return the headers in string type,
+// like this:
+// header1: value1,value11
+// header2: value2
 func (resp *Response) RawHeaders() string {
 	var rawHeader string
 	for k, v := range resp.RawResponse.Header {
@@ -68,7 +63,8 @@ func (resp *Response) HeadersMap() map[string]string {
 	return headers
 }
 
-// GetHeader return a specific header. If header not exist, return empty string and false
+// GetHeader return a specific header.
+// If header not exist, return empty string and false
 func (resp *Response) GetHeader(name string) (string, bool) {
 	for k, v := range resp.RawResponse.Header {
 		if k == name {
@@ -78,7 +74,7 @@ func (resp *Response) GetHeader(name string) (string, bool) {
 	return "", false
 }
 
-// RawCookies return the headers in string type
+// RawCookies return the headers in string type,
 // like key1=value1; key2=value2
 func (resp *Response) RawCookies() string {
 	var rawCookie string
@@ -97,7 +93,8 @@ func (resp *Response) CookiesMap() map[string]string {
 	return cookies
 }
 
-// GetCookie return a specific cookie. If cookie not exist, return empty string and false
+// GetCookie return a specific cookie.
+// If cookie not exist, return empty string and false
 func (resp *Response) GetCookie(name string) (string, bool) {
 	for _, cookie := range resp.RawResponse.Cookies() {
 		if cookie.Name == name {
