@@ -1,6 +1,7 @@
 package zhttp
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -45,7 +46,27 @@ func (body *MultipartBody) Close() {
 	}
 }
 
+func (body *MultipartBody) onlyFormReader() (io.Reader, string, error) {
+	var buf bytes.Buffer
+	multipartWriter := multipart.NewWriter(&buf)
+
+	for key, value := range body.Form {
+		multipartWriter.WriteField(key, value)
+	}
+
+	err := multipartWriter.Close()
+	if err != nil {
+		return nil, "", err
+	}
+
+	return &buf, multipartWriter.FormDataContentType(), nil
+}
+
 func (body *MultipartBody) Reader() (io.Reader, string, error) {
+	if len(body.Files) == 0 {
+		return body.onlyFormReader()
+	}
+
 	pr, pw := io.Pipe()
 	multipartWriter := multipart.NewWriter(pw)
 
