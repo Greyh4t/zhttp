@@ -12,6 +12,8 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+var ctxOptionKey = struct{}{}
+
 // buildClient make a new client
 func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *http.Client {
 	if cookieJar == nil {
@@ -25,7 +27,7 @@ func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *htt
 	}
 
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		reqOptions, ok := req.Context().Value("options").(*ReqOptions)
+		reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
 		if (ok && reqOptions.DisableRedirect) || options.DisableRedirect {
 			return http.ErrUseLastResponse
 		}
@@ -68,7 +70,7 @@ func (z *Zhttp) createTransport(options *HTTPOptions) *http.Transport {
 	}
 
 	transport.Proxy = func(req *http.Request) (*url.URL, error) {
-		reqOptions, ok := req.Context().Value("options").(*ReqOptions)
+		reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
 		if ok && len(reqOptions.Proxies) > 0 {
 			if p, ok := reqOptions.Proxies[req.URL.Scheme]; ok {
 				return p, nil
@@ -114,7 +116,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	oldHost, set := z.parseIPOfDomain(req, options)
+	oldHost, set := z.parseHostIP(req, options)
 
 	z.addCookies(req, options)
 	z.addHeaders(req, options)
@@ -145,7 +147,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 func (z *Zhttp) buildRequest(method, rawURL string, options *ReqOptions) (*http.Request, error) {
 	ctx := context.Background()
 	if options.DisableRedirect || len(options.Proxies) > 0 {
-		ctx = context.WithValue(ctx, "options", options)
+		ctx = context.WithValue(ctx, ctxOptionKey, options)
 	}
 
 	if options.Body == nil {
@@ -189,15 +191,15 @@ func (z *Zhttp) buildURL(rawURL string, options *ReqOptions) (string, error) {
 	return rawURL, nil
 }
 
-// parseIPOfDomain handle custom dns resolution
-func (z *Zhttp) parseIPOfDomain(req *http.Request, options *ReqOptions) (string, bool) {
-	if options.IPOfDomain != "" {
+// parseHostIP handle custom dns resolution
+func (z *Zhttp) parseHostIP(req *http.Request, options *ReqOptions) (string, bool) {
+	if options.HostIP != "" {
 		oldHost := req.URL.Host
 		port := req.URL.Port()
 		if port != "" {
-			req.URL.Host = options.IPOfDomain + ":" + port
+			req.URL.Host = options.HostIP + ":" + port
 		} else {
-			req.URL.Host = options.IPOfDomain
+			req.URL.Host = options.HostIP
 		}
 		return oldHost, true
 	}

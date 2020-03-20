@@ -130,10 +130,10 @@ type ReqOptions struct {
 	// Host allows you to set an arbitrary custom host
 	Host string
 
-	// IPOfDomain allows you to set an custom dns resolution for current request.
+	// HostIP allows you to set an custom dns resolution for current request.
 	// The value should be an IP.
 	// When proxy usable, this value does not take effect
-	IPOfDomain string
+	HostIP string
 
 	// Auth allows you to specify a user name and password that you wish to
 	// use when requesting the URL. It will use basic HTTP authentication
