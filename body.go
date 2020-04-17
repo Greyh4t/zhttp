@@ -89,7 +89,7 @@ func RawBytesForm(body []byte) Body {
 
 // Form used to create Body from map, and set form Content-Type
 func Form(body map[string]string) Body {
-	var values url.Values
+	values := url.Values{}
 	for key, value := range body {
 		values.Set(key, value)
 	}
