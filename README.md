@@ -103,8 +103,8 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println(resp.StatusCode, resp.Status, resp.ContentLength)
-	log.Println(resp.RawHeaders())
-	log.Println(resp.CookiesMap())
+	log.Println(resp.Headers.String())
+	log.Println(resp.Cookies.String())
 	log.Println(zhttp.RawHTTPRequest(resp.RawResponse.Request))
 	log.Println(resp.String())
 	resp.Close()
@@ -138,7 +138,7 @@ func main() {
 		log.Fatal(err)
 	}
 	body := resp.Byte()
-	if resp.Error != nil{
+	if resp.Error != nil {
 		log.Fatal(resp.Error)
 	}
 	resp.Close()
@@ -146,9 +146,9 @@ func main() {
 
 	// 请求3 post表单
 	resp, err = z.Post("http://www.example.com/?query1=value1&query2=value2", &zhttp.ReqOptions{
-		Body:      zhttp.RawForm(`fk1=fv1&fk2=fv2`),
-		Headers:    map[string]string{
-			"Cookie":"k1=v1; k2=v2",
+		Body: zhttp.RawForm(`fk1=fv1&fk2=fv2`),
+		Headers: map[string]string{
+			"Cookie": "k1=v1; k2=v2",
 		},
 		UserAgent: "zhttp-ua-test",
 	})
@@ -159,9 +159,9 @@ func main() {
 
 	// 请求4 post json
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
-		Body:      zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
-		Headers:    map[string]string{
-			"Cookie":"k1=v1; k2=v2",
+		Body: zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
+		Headers: map[string]string{
+			"Cookie": "k1=v1; k2=v2",
 		},
 		UserAgent: "zhttp-ua-test",
 		IsAjax:    true,

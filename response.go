@@ -4,14 +4,106 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/textproto"
 	"strings"
 )
+
+// Headers is a wrapper for http.Header
+type headers struct {
+	header http.Header
+}
+
+// String return a header in wire format.
+func (h *headers) String() string {
+	var buf strings.Builder
+	h.header.Write(&buf)
+	return buf.String()
+}
+
+// Get gets the value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// multiple header fields with the same name will be join with ", ".
+// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. To access multiple
+// values of a key, or to use non-canonical keys, access the
+// map directly.
+func (h *headers) Get(key string) string {
+	v, ok := h.header[textproto.CanonicalMIMEHeaderKey(key)]
+	if !ok {
+		return ""
+	}
+	return strings.Join(v, ", ")
+}
+
+// Has will return information about whether a response header
+// with the given name exists. If not exist, Has returns false.
+// It is case insensitive;
+func (h *headers) Has(key string) bool {
+	_, ok := h.header[textproto.CanonicalMIMEHeaderKey(key)]
+	return ok
+}
+
+// Cookies is a wrapper for []*http.Cookie
+type cookies struct {
+	cookies []*http.Cookie
+	get     func() []*http.Cookie
+}
+
+func (c *cookies) parse() {
+	if c.cookies == nil {
+		c.cookies = c.get()
+	}
+}
+
+// String return the cookies in string type.
+// like key1=value1; key2=value2
+func (c *cookies) String() string {
+	c.parse()
+
+	var buf strings.Builder
+	for i, cookie := range c.cookies {
+		buf.WriteString(cookie.Name)
+		buf.WriteRune('=')
+		buf.WriteString(cookie.Value)
+		if i < len(c.cookies)-1 {
+			buf.WriteString("; ")
+		}
+	}
+	return buf.String()
+}
+
+// Get gets the cookie value with the given name. If
+// there are no values associated with the name, Get returns "".
+func (c *cookies) Get(name string) string {
+	c.parse()
+
+	for _, cookie := range c.cookies {
+		if cookie.Name == name {
+			return cookie.Value
+		}
+	}
+	return ""
+}
+
+// Has will return whether the specified cookie is set in response.
+func (c *cookies) Has(name string) bool {
+	c.parse()
+
+	for _, cookie := range c.cookies {
+		if cookie.Name == name {
+			return true
+		}
+	}
+	return false
+}
 
 // Response is a wrapper for *http.Response
 type Response struct {
 	StatusCode    int
 	Status        string
 	ContentLength int64
+	Headers       headers
+	Cookies       cookies
 	RawResponse   *http.Response
 	Error         error
 }
@@ -40,66 +132,4 @@ func (resp *Response) ReadN(n int64) []byte {
 // Close close the body. Must be called when the response is used
 func (resp *Response) Close() error {
 	return resp.RawResponse.Body.Close()
-}
-
-// RawHeaders return the headers in string type,
-// like this:
-// header1: value1,value11
-// header2: value2
-func (resp *Response) RawHeaders() string {
-	var rawHeader string
-	for k, v := range resp.RawResponse.Header {
-		rawHeader += k + ": " + strings.Join(v, ",") + "\r\n"
-	}
-	return strings.TrimSuffix(rawHeader, "\r\n")
-}
-
-// HeadersMap return the headers in a map
-func (resp *Response) HeadersMap() map[string]string {
-	headers := map[string]string{}
-	for k, v := range resp.RawResponse.Header {
-		headers[k] = strings.Join(v, ",")
-	}
-	return headers
-}
-
-// GetHeader return a specific header.
-// If header not exist, return empty string and false
-func (resp *Response) GetHeader(name string) (string, bool) {
-	for k, v := range resp.RawResponse.Header {
-		if k == name {
-			return strings.Join(v, ","), true
-		}
-	}
-	return "", false
-}
-
-// RawCookies return the headers in string type,
-// like key1=value1; key2=value2
-func (resp *Response) RawCookies() string {
-	var rawCookie string
-	for _, cookie := range resp.RawResponse.Cookies() {
-		rawCookie += cookie.Name + "=" + cookie.Value + ";"
-	}
-	return strings.TrimSuffix(rawCookie, ";")
-}
-
-// CookiesMap return the cookies in a map
-func (resp *Response) CookiesMap() map[string]string {
-	cookies := map[string]string{}
-	for _, cookie := range resp.RawResponse.Cookies() {
-		cookies[cookie.Name] = cookie.Value
-	}
-	return cookies
-}
-
-// GetCookie return a specific cookie.
-// If cookie not exist, return empty string and false
-func (resp *Response) GetCookie(name string) (string, bool) {
-	for _, cookie := range resp.RawResponse.Cookies() {
-		if cookie.Name == name {
-			return cookie.Value, true
-		}
-	}
-	return "", false
 }

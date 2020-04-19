@@ -111,7 +111,8 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	req, err := z.buildRequest(method, rawURL, options)
+	ctx := context.Background()
+	req, err := z.buildRequest(ctx, method, rawURL, options)
 	if err != nil {
 		return nil, err
 	}
@@ -140,12 +141,13 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		StatusCode:    resp.StatusCode,
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
+		Headers:       headers{resp.Header},
+		Cookies:       cookies{get: resp.Cookies},
 	}, nil
 }
 
 // buildRequest build request with body and other
-func (z *Zhttp) buildRequest(method, rawURL string, options *ReqOptions) (*http.Request, error) {
-	ctx := context.Background()
+func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options *ReqOptions) (*http.Request, error) {
 	if options.DisableRedirect || len(options.Proxies) > 0 {
 		ctx = context.WithValue(ctx, ctxOptionKey, options)
 	}
@@ -245,6 +247,12 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 
 // addCookies handle custom cookies
 func (z *Zhttp) addCookies(req *http.Request, options *ReqOptions) {
+	for k, v := range z.options.Cookies {
+		if _, ok := options.Cookies[k]; !ok {
+			req.AddCookie(&http.Cookie{Name: k, Value: v})
+		}
+	}
+
 	for k, v := range options.Cookies {
 		req.AddCookie(&http.Cookie{Name: k, Value: v})
 	}

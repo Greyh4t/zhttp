@@ -16,8 +16,13 @@ type Auth struct {
 type HTTPOptions struct {
 	// UserAgent allows you to set an arbitrary custom user agent
 	UserAgent string
+
+	// Cookie allows you to attach cookies to every request.
+	Cookies map[string]string
+
 	// Headers uses to set custom HTTP headers to every request
 	Headers map[string]string
+
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
 	Proxies map[string]*url.URL
