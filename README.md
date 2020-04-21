@@ -104,7 +104,7 @@ func main() {
 	}
 	log.Println(resp.StatusCode, resp.Status, resp.ContentLength)
 	log.Println(resp.Headers.String())
-	log.Println(resp.Cookies.String())
+	log.Println(resp.Cookies().String())
 	log.Println(zhttp.RawHTTPRequest(resp.RawResponse.Request))
 	log.Println(resp.String())
 	resp.Close()

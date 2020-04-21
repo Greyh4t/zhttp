@@ -141,8 +141,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		StatusCode:    resp.StatusCode,
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
-		Headers:       headers{resp.Header},
-		Cookies:       cookies{get: resp.Cookies},
+		Headers:       Headers(resp.Header),
 	}, nil
 }
 
