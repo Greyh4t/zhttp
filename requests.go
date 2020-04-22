@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/greyh4t/dnscache"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -28,7 +29,7 @@ func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *htt
 
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
-		if (ok && reqOptions.DisableRedirect) || options.DisableRedirect {
+		if ok && reqOptions.DisableRedirect {
 			return http.ErrUseLastResponse
 		}
 		return nil
@@ -38,8 +39,15 @@ func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *htt
 }
 
 // createTransport create a global *http.Transport for all http client
-func (z *Zhttp) createTransport(options *HTTPOptions) *http.Transport {
-	transport := http.DefaultTransport.(*http.Transport)
+func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transport {
+	transport := &http.Transport{
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	transport.MaxIdleConnsPerHost = options.MaxIdleConnsPerHost
 	transport.MaxConnsPerHost = options.MaxConnsPerHost
 	transport.DisableKeepAlives = options.DisableKeepAlives
@@ -61,6 +69,7 @@ func (z *Zhttp) createTransport(options *HTTPOptions) *http.Transport {
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
+		DualStack: true,
 	}
 	if options.DialTimeout > 0 {
 		dialer.Timeout = options.DialTimeout
@@ -84,10 +93,10 @@ func (z *Zhttp) createTransport(options *HTTPOptions) *http.Transport {
 		return http.ProxyFromEnvironment(req)
 	}
 
-	if z.dnsCache != nil {
+	if cache != nil {
 		transport.DialContext = func(ctx context.Context, network string, address string) (net.Conn, error) {
 			host, port, _ := net.SplitHostPort(address)
-			ip, err := z.dnsCache.FetchOneString(host)
+			ip, err := cache.FetchOneV4String(host)
 			if err != nil {
 				return nil, err
 			}

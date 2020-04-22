@@ -1,8 +1,7 @@
 package zhttp
 
 import (
-	"bytes"
-	"io/ioutil"
+	"io"
 	"mime"
 	"net/http"
 	"net/url"
@@ -54,52 +53,42 @@ func MustProxy(proxies map[string]string) map[string]*url.URL {
 // RawHTTPRequest format the http.Request to string.
 // Notice, the order of headers is not strictly consistent
 func RawHTTPRequest(req *http.Request) string {
-	var rawRequest bytes.Buffer
-	rawRequest.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
+	var buf strings.Builder
+	buf.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
 
 	if req.Host != "" {
-		rawRequest.WriteString("Host: " + req.Host + "\r\n")
+		buf.WriteString("Host: " + req.Host + "\r\n")
 	} else {
-		rawRequest.WriteString("Host: " + req.URL.Host + "\r\n")
+		buf.WriteString("Host: " + req.URL.Host + "\r\n")
 	}
 
-	for key, val := range req.Header {
-		rawRequest.WriteString(key + ": " + val[0] + "\r\n")
-	}
+	req.Header.Write(&buf)
+	buf.WriteString("\r\n")
 
-	rawRequest.WriteString("\r\n")
-	rawRequest.Write(reqBody(req))
-
-	return rawRequest.String()
-}
-
-func reqBody(req *http.Request) []byte {
 	if req.GetBody != nil {
 		rc, err := req.GetBody()
 		if err == nil {
-			body, err := ioutil.ReadAll(rc)
+			io.Copy(&buf, rc)
 			rc.Close()
-			if err == nil {
-				return body
-			}
 		}
 	}
-	return nil
+
+	return buf.String()
 }
 
 // RawHTTPResponse format the http.Response to string.
 // Notice, the order of headers is not strictly consistent
 func RawHTTPResponse(resp *http.Response) string {
-	var rawResponse bytes.Buffer
-	rawResponse.WriteString(resp.Proto + " " + resp.Status + "\r\n")
-	for key, val := range resp.Header {
-		rawResponse.WriteString(key + ": " + val[0] + "\r\n")
-	}
+	var buf strings.Builder
 
-	rawResponse.WriteString("\r\n")
-	buf, _ := ioutil.ReadAll(resp.Body)
-	rawResponse.Write(buf)
-	return rawResponse.String()
+	buf.WriteString(resp.Proto + " " + resp.Status + "\r\n")
+
+	resp.Header.Write(&buf)
+	buf.WriteString("\r\n")
+
+	io.Copy(&buf, resp.Body)
+
+	return buf.String()
 }
 
 // CookieFromRaw parses a cookie in string format to []*http.Cookie

@@ -27,9 +27,6 @@ type HTTPOptions struct {
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
 	Proxies map[string]*url.URL
 
-	// DisableRedirect will disable redirect for request
-	DisableRedirect bool
-
 	// InsecureSkipVerify is a flag that specifies if we should validate the
 	// server's TLS certificate. It should be noted that Go's TLS verify mechanism
 	// doesn't validate if a certificate has been revoked
@@ -95,6 +92,7 @@ type HTTPOptions struct {
 
 	// DNSCacheExpire is the timeout of dns cache , if zero, not use dns cache
 	DNSCacheExpire time.Duration
+
 	// DNSServer allows you to set an custom dns host, like 1.1.1.1:25, only effective in linux
 	DNSServer string
 }
