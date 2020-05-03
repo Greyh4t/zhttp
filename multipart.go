@@ -26,7 +26,7 @@ type File struct {
 }
 
 // Multipart used to create Body object
-func Multipart(files []*File, form map[string]string) Body {
+func Multipart(files []*File, form M) Body {
 	return &MultipartBody{
 		Files: files,
 		Form:  form,
@@ -35,7 +35,7 @@ func Multipart(files []*File, form map[string]string) Body {
 
 type MultipartBody struct {
 	Files []*File
-	Form  map[string]string
+	Form  M
 }
 
 func (body *MultipartBody) Close() {

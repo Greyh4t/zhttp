@@ -11,6 +11,12 @@ type Auth struct {
 	Password string
 }
 
+// M is short for map[string] string
+type M map[string]string
+
+// P is short for map[string]*url.URL
+type P map[string]*url.URL
+
 // HTTPOptions is the options for zhttp.Zhttp,
 // it will effective on per request
 type HTTPOptions struct {
@@ -18,14 +24,14 @@ type HTTPOptions struct {
 	UserAgent string
 
 	// Cookie allows you to attach cookies to every request.
-	Cookies map[string]string
+	Cookies M
 
 	// Headers uses to set custom HTTP headers to every request
-	Headers map[string]string
+	Headers M
 
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
-	Proxies map[string]*url.URL
+	Proxies P
 
 	// InsecureSkipVerify is a flag that specifies if we should validate the
 	// server's TLS certificate. It should be noted that Go's TLS verify mechanism
@@ -112,7 +118,7 @@ type ReqOptions struct {
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
 	// If setted, overwrite HTTPOptions.Proxies in current request.
-	Proxies map[string]*url.URL
+	Proxies P
 
 	// DisableRedirect will disable redirect for request
 	DisableRedirect bool
@@ -125,10 +131,10 @@ type ReqOptions struct {
 
 	// Cookie allows you to attach cookies to your request.
 	// Only effective in current request
-	Cookies map[string]string
+	Cookies M
 
 	// Headers uses to set custom HTTP headers to the request
-	Headers map[string]string
+	Headers M
 
 	// Host allows you to set an arbitrary custom host
 	Host string

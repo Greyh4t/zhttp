@@ -33,11 +33,11 @@ func FileFromDisk(filePath string) (*File, error) {
 	return file, nil
 }
 
-// MustProxy convert scheme and url string to map[string]*url.URL.
+// MustProxy convert scheme and url string to P.
 // If there have any error, will panic
-func MustProxy(proxies map[string]string) map[string]*url.URL {
+func MustProxy(proxies M) P {
 	if len(proxies) > 0 {
-		proxiesMap := map[string]*url.URL{}
+		proxiesMap := P{}
 		for scheme, proxyURL := range proxies {
 			urlObj, err := url.Parse(proxyURL)
 			if err != nil {
@@ -109,7 +109,9 @@ func CookieFromRaw(rawCookie string, domain string) []*http.Cookie {
 		if len(pairs) == 2 {
 			cookie.Value = pairs[1]
 		}
+
 		cookies[i] = cookie
 	}
+
 	return cookies
 }

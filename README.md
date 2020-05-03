@@ -31,7 +31,7 @@ import "github.com/greyh4t/zhttp"
 
 func main() {
 	zhttp.InitDefaultClient(&zhttp.HTTPOptions{
-		Proxies: zhttp.MustProxy(map[string]string{
+		Proxies: zhttp.MustProxy(zhttp.M{
 			"http":  "http://127.0.0.1:8080",
 			"https": "http://127.0.0.1:8080",
 		}),
@@ -51,7 +51,7 @@ import "github.com/greyh4t/zhttp"
 
 func main() {
 	z := zhttp.New(&zhttp.HTTPOptions{
-		Proxies: zhttp.MustProxy(map[string]string{
+		Proxies: zhttp.MustProxy(zhttp.M{
 			"http":  "http://127.0.0.1:8080",
 			"https": "http://127.0.0.1:8080",
 		}),
@@ -84,7 +84,7 @@ import (
 func main() {
 	z := zhttp.New(&zhttp.HTTPOptions{
 		UserAgent: "global-useragent",
-		Headers: map[string]string{
+		Headers: zhttp.M{
 			"globalheader1": "value1",
 			"globalheader2": "value2",
 		},
@@ -113,19 +113,19 @@ func main() {
 	resp, err = z.Post("http://www.example.com/?query1=value3", &zhttp.ReqOptions{
 		DisableRedirect: true,
 		Timeout:         time.Second * 10,
-		Proxies: zhttp.MustProxy(map[string]string{
+		Proxies: zhttp.MustProxy(zhttp.M{
 			"http":  "http://127.0.0.1:8080",
 			"https": "http://127.0.0.1:8080",
 		}),
-		Headers: map[string]string{
+		Headers: zhttp.M{
 			"header1": "value1",
 			"header2": "value2",
 		},
-		Cookies: map[string]string{
+		Cookies: zhttp.M{
 			"k1": "v1",
 			"k2": "v2",
 		},
-		Body: zhttp.Form(map[string]string{
+		Body: zhttp.Form(zhttp.M{
 			"key1": "value1",
 			"key2": "value2",
 		}),
@@ -147,7 +147,7 @@ func main() {
 	// 请求3 post表单
 	resp, err = z.Post("http://www.example.com/?query1=value1&query2=value2", &zhttp.ReqOptions{
 		Body: zhttp.RawForm(`fk1=fv1&fk2=fv2`),
-		Headers: map[string]string{
+		Headers: zhttp.M{
 			"Cookie": "k1=v1; k2=v2",
 		},
 		UserAgent: "zhttp-ua-test",
@@ -160,7 +160,7 @@ func main() {
 	// 请求4 post json
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
 		Body: zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
-		Headers: map[string]string{
+		Headers: zhttp.M{
 			"Cookie": "k1=v1; k2=v2",
 		},
 		UserAgent: "zhttp-ua-test",
@@ -180,7 +180,7 @@ func main() {
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
 		Body:        zhttp.RawReader(f),
 		ContentType: "text/plain",
-		Headers: map[string]string{
+		Headers: zhttp.M{
 			"h1": "v1",
 			"h2": "v2",
 		},
@@ -206,7 +206,7 @@ func main() {
 	}
 
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
-		Body: zhttp.Multipart([]*zhttp.File{file1, file2}, map[string]string{
+		Body: zhttp.Multipart([]*zhttp.File{file1, file2}, zhttp.M{
 			"field1": "value1",
 			"field2": "value2",
 		}),
@@ -220,7 +220,7 @@ func main() {
 	// 请求7 session的使用
 	s := z.NewSession()
 	resp, err = s.Post("http://www.example.com/login", &zhttp.ReqOptions{
-		Body: zhttp.Form(map[string]string{
+		Body: zhttp.Form(zhttp.M{
 			"username": "username",
 			"password": "password",
 		}),
