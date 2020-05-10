@@ -62,7 +62,7 @@ func (body *MultipartBody) onlyFormReader() (io.Reader, string, error) {
 	return &buf, multipartWriter.FormDataContentType(), nil
 }
 
-func (body *MultipartBody) Reader() (io.Reader, string, error) {
+func (body *MultipartBody) Content() (io.Reader, string, error) {
 	if len(body.Files) == 0 {
 		return body.onlyFormReader()
 	}

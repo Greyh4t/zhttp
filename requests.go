@@ -3,39 +3,37 @@ package zhttp
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"time"
 
 	"github.com/greyh4t/dnscache"
-	"golang.org/x/net/publicsuffix"
 )
 
 var ctxOptionKey = struct{}{}
 
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
+	if ok && reqOptions.DisableRedirect {
+		return http.ErrUseLastResponse
+	}
+
+	if len(via) >= 10 {
+		return errors.New("stopped after 10 redirects")
+	}
+	return nil
+}
+
 // buildClient make a new client
 func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *http.Client {
-	if cookieJar == nil {
-		cookieJar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	return &http.Client{
+		Transport:     z.transport,
+		Jar:           cookieJar,
+		Timeout:       options.Timeout,
+		CheckRedirect: checkRedirect,
 	}
-
-	client := &http.Client{
-		Transport: z.transport,
-		Jar:       cookieJar,
-		Timeout:   options.Timeout,
-	}
-
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
-		if ok && reqOptions.DisableRedirect {
-			return http.ErrUseLastResponse
-		}
-		return nil
-	}
-
-	return client
 }
 
 // createTransport create a global *http.Transport for all http client
@@ -164,7 +162,7 @@ func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options
 		return http.NewRequestWithContext(ctx, method, rawURL, nil)
 	}
 
-	bodyReader, contentType, err := options.Body.Reader()
+	bodyReader, contentType, err := options.Body.Content()
 	if err != nil {
 		return nil, err
 	}

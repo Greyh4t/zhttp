@@ -146,7 +146,7 @@ func main() {
 
 	// 请求3 post表单
 	resp, err = z.Post("http://www.example.com/?query1=value1&query2=value2", &zhttp.ReqOptions{
-		Body: zhttp.RawForm(`fk1=fv1&fk2=fv2`),
+		Body: zhttp.FormString(`fk1=fv1&fk2=fv2`),
 		Headers: zhttp.M{
 			"Cookie": "k1=v1; k2=v2",
 		},
@@ -159,7 +159,7 @@ func main() {
 
 	// 请求4 post json
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
-		Body: zhttp.RawJSON(`{"jk1":"jv","jk2":2}`),
+		Body: zhttp.JSONString(`{"jk1":"jv","jk2":2}`),
 		Headers: zhttp.M{
 			"Cookie": "k1=v1; k2=v2",
 		},
@@ -176,9 +176,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
 
 	resp, err = z.Post("http://www.example.com/", &zhttp.ReqOptions{
-		Body:        zhttp.RawReader(f),
+		Body:        zhttp.Reader(f),
 		ContentType: "text/plain",
 		Headers: zhttp.M{
 			"h1": "v1",

@@ -11,34 +11,34 @@ import (
 
 // Body is used to define the body part of the http request
 type Body interface {
-	Reader() (io.Reader, string, error)
+	Content() (io.Reader, string, error)
 }
 
-// Raw used to create Body from string, need to set the Content-Type yourself
-func Raw(body string) Body {
+// String used to create Body from string, need to set the Content-Type yourself
+func String(body string) Body {
 	return &StringBody{Body: body}
 }
 
-// RawBytes used to create Body from []byte, need to set the Content-Type yourself
-func RawBytes(body []byte) Body {
+// Bytes used to create Body from []byte, need to set the Content-Type yourself
+func Bytes(body []byte) Body {
 	return &BytesBody{Body: body}
 }
 
-// RawReader used to create Body from io.Reader, need to set the Content-Type yourself
-func RawReader(body io.Reader) Body {
+// Reader used to create Body from io.Reader, need to set the Content-Type yourself
+func Reader(body io.Reader) Body {
 	return &ReaderBody{Body: body}
 }
 
-// RawJSON used to create Body from string, and set json Content-Type
-func RawJSON(body string) Body {
+// JSONString used to create Body from string, and set json Content-Type
+func JSONString(body string) Body {
 	return &StringBody{
 		ContentType: "application/json",
 		Body:        body,
 	}
 }
 
-// RawBytesJSON used to create Body from []byte, and set json Content-Type
-func RawBytesJSON(body []byte) Body {
+// JSONBytes used to create Body from []byte, and set json Content-Type
+func JSONBytes(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/json",
 		Body:        body,
@@ -50,16 +50,16 @@ func JSON(body interface{}) Body {
 	return &JSONBody{body}
 }
 
-// RawXML used to create Body from string, and set xml Content-Type
-func RawXML(body string) Body {
+// XMLString used to create Body from string, and set xml Content-Type
+func XMLString(body string) Body {
 	return &StringBody{
 		ContentType: "application/xml",
 		Body:        body,
 	}
 }
 
-// RawBytesXML used to create Body from []byte, and set xml Content-Type
-func RawBytesXML(body []byte) Body {
+// XMLBytes used to create Body from []byte, and set xml Content-Type
+func XMLBytes(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/xml",
 		Body:        body,
@@ -71,16 +71,16 @@ func XML(body interface{}) Body {
 	return &XMLBody{body}
 }
 
-// RawForm used to create Body from string, and set form Content-Type
-func RawForm(body string) Body {
+// FormString used to create Body from string, and set form Content-Type
+func FormString(body string) Body {
 	return &StringBody{
 		ContentType: "application/x-www-form-urlencoded",
 		Body:        body,
 	}
 }
 
-// RawBytesForm used to create Body from []byte, and set form Content-Type
-func RawBytesForm(body []byte) Body {
+// FormBytes used to create Body from []byte, and set form Content-Type
+func FormBytes(body []byte) Body {
 	return &BytesBody{
 		ContentType: "application/x-www-form-urlencoded",
 		Body:        body,
@@ -104,7 +104,7 @@ type ReaderBody struct {
 	Body        io.Reader
 }
 
-func (body *ReaderBody) Reader() (io.Reader, string, error) {
+func (body *ReaderBody) Content() (io.Reader, string, error) {
 	return body.Body, body.ContentType, nil
 }
 
@@ -113,7 +113,7 @@ type StringBody struct {
 	Body        string
 }
 
-func (body *StringBody) Reader() (io.Reader, string, error) {
+func (body *StringBody) Content() (io.Reader, string, error) {
 	return strings.NewReader(body.Body), body.ContentType, nil
 }
 
@@ -122,7 +122,7 @@ type BytesBody struct {
 	Body        []byte
 }
 
-func (body *BytesBody) Reader() (io.Reader, string, error) {
+func (body *BytesBody) Content() (io.Reader, string, error) {
 	return bytes.NewReader(body.Body), body.ContentType, nil
 }
 
@@ -130,7 +130,7 @@ type JSONBody struct {
 	Body interface{}
 }
 
-func (body *JSONBody) Reader() (io.Reader, string, error) {
+func (body *JSONBody) Content() (io.Reader, string, error) {
 	contentType := "application/json"
 	data, err := json.Marshal(body.Body)
 	if err != nil {
@@ -143,7 +143,7 @@ type XMLBody struct {
 	Body interface{}
 }
 
-func (body *XMLBody) Reader() (io.Reader, string, error) {
+func (body *XMLBody) Content() (io.Reader, string, error) {
 	contentType := "application/xml"
 	data, err := xml.Marshal(body.Body)
 	if err != nil {
