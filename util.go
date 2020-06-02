@@ -35,9 +35,9 @@ func FileFromDisk(filePath string) (*File, error) {
 
 // MustProxy convert scheme and url string to P.
 // If there have any error, will panic
-func MustProxy(proxies M) P {
+func MustProxy(proxies map[string]string) map[string]*url.URL {
 	if len(proxies) > 0 {
-		proxiesMap := P{}
+		proxiesMap := map[string]*url.URL{}
 		for scheme, proxyURL := range proxies {
 			urlObj, err := url.Parse(proxyURL)
 			if err != nil {

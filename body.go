@@ -88,7 +88,7 @@ func FormBytes(body []byte) Body {
 }
 
 // Form used to create Body from map, and set form Content-Type
-func Form(body M) Body {
+func Form(body map[string]string) Body {
 	values := url.Values{}
 	for key, value := range body {
 		values.Set(key, value)

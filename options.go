@@ -24,14 +24,14 @@ type HTTPOptions struct {
 	UserAgent string
 
 	// Cookie allows you to attach cookies to every request.
-	Cookies M
+	Cookies map[string]string
 
 	// Headers uses to set custom HTTP headers to every request
-	Headers M
+	Headers map[string]string
 
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
-	Proxies P
+	Proxies map[string]*url.URL
 
 	// InsecureSkipVerify is a flag that specifies if we should validate the
 	// server's TLS certificate. It should be noted that Go's TLS verify mechanism
@@ -118,7 +118,7 @@ type ReqOptions struct {
 	// Proxies is a map in the following format
 	// *protocol* => proxy address e.g http => http://127.0.0.1:8080,
 	// If setted, overwrite HTTPOptions.Proxies in current request.
-	Proxies P
+	Proxies map[string]*url.URL
 
 	// DisableRedirect will disable redirect for request
 	DisableRedirect bool
@@ -131,10 +131,10 @@ type ReqOptions struct {
 
 	// Cookie allows you to attach cookies to your request.
 	// Only effective in current request
-	Cookies M
+	Cookies map[string]string
 
 	// Headers uses to set custom HTTP headers to the request
-	Headers M
+	Headers map[string]string
 
 	// Host allows you to set an arbitrary custom host
 	Host string

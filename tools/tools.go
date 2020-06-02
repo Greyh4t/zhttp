@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// GetCookie check all responses in the redirect and return the first matching cookie and url
+// GetCookie check all responses in the redirect and return the first matching url and cookie
 func GetCookie(resp *http.Response, name string) (string, string, bool) {
 	if resp == nil {
 		return "", "", false
@@ -22,7 +22,7 @@ func GetCookie(resp *http.Response, name string) (string, string, bool) {
 	return GetCookie(req.Response, name)
 }
 
-// GetHeader check all responses in the redirect and return the first matching header and url
+// GetHeader check all responses in the redirect and return the first matching url and header
 func GetHeader(resp *http.Response, key string) (string, string, bool) {
 	if resp == nil {
 		return "", "", false
