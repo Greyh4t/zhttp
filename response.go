@@ -219,7 +219,7 @@ func (resp *Response) Close() error {
 	return resp.Body.Close()
 }
 
-// RawHTTPRequest format the http.Request to string.
+// RawHTTPRequest format the last http.Request to string.
 // Notice, the order of headers is not strictly consistent
 func (resp *Response) RawHTTPRequest() string {
 	var buf strings.Builder
@@ -247,7 +247,7 @@ func (resp *Response) RawHTTPRequest() string {
 	return buf.String()
 }
 
-// RawHTTPResponse format the http.Response to string.
+// RawHTTPResponse format the last http.Response to string.
 // Notice, the order of headers is not strictly consistent
 func (resp *Response) RawHTTPResponse() string {
 	var buf strings.Builder
