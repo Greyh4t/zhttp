@@ -139,8 +139,8 @@ func main() {
 		log.Fatal(err)
 	}
 	body := resp.Body.Bytes()
-	if resp.Error != nil {
-		log.Fatal(resp.Error)
+	if resp.Body.Err != nil {
+		log.Fatal(resp.Body.Err)
 	}
 	resp.Close()
 	log.Println(body)
