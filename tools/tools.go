@@ -1,12 +1,18 @@
 package tools
 
 import (
+	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/greyh4t/zhttp"
 )
 
-// GetCookie check all responses in the redirect and return the first matching url and cookie
-func GetCookie(resp *http.Response, name string) (string, string, bool) {
+// DeepGetCookie check all responses in the redirect and return the first matching url and cookie
+func DeepGetCookie(resp *http.Response, name string) (string, string, bool) {
 	if resp == nil {
 		return "", "", false
 	}
@@ -19,11 +25,11 @@ func GetCookie(resp *http.Response, name string) (string, string, bool) {
 		}
 	}
 
-	return GetCookie(req.Response, name)
+	return DeepGetCookie(req.Response, name)
 }
 
-// GetHeader check all responses in the redirect and return the first matching url and header
-func GetHeader(resp *http.Response, key string) (string, string, bool) {
+// DeepGetHeader check all responses in the redirect and return the first matching url and header
+func DeepGetHeader(resp *http.Response, key string) (string, string, bool) {
 	if resp == nil {
 		return "", "", false
 	}
@@ -34,11 +40,11 @@ func GetHeader(resp *http.Response, key string) (string, string, bool) {
 		return req.URL.String(), strings.Join(values, ", "), true
 	}
 
-	return GetHeader(req.Response, key)
+	return DeepGetHeader(req.Response, key)
 }
 
-// CookieFromRaw parses a cookie in string format to []*http.Cookie
-func CookieFromRaw(rawCookie string, domain string) []*http.Cookie {
+// CookiesFromRaw parse a cookie in string format to []*http.Cookie
+func CookiesFromRaw(rawCookie string, domain string) []*http.Cookie {
 	list := strings.Split(rawCookie, ";")
 	if len(list) == 0 {
 		return nil
@@ -60,4 +66,37 @@ func CookieFromRaw(rawCookie string, domain string) []*http.Cookie {
 	}
 
 	return cookies
+}
+
+// FileFromDisk read file from disk and detect mime with filename
+func FileFromDisk(filePath string) (*zhttp.File, error) {
+	filePath = filepath.Clean(filePath)
+	fd, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	file := &zhttp.File{
+		Name:     fd.Name(),
+		Contents: fd,
+	}
+	file.Mime = mime.TypeByExtension(filepath.Ext(file.Name))
+
+	return file, nil
+}
+
+// SaveToFile save reader's content to file
+func SaveToFile(r io.Reader, filename string) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err := io.Copy(f, r); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
 }

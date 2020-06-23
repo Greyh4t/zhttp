@@ -1,11 +1,104 @@
 package zhttp
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
+
+// ZBody is a wrapper for http.Response.ZBody
+type ZBody struct {
+	rawBody   io.ReadCloser
+	buf       bytes.Buffer
+	bufCached bool
+	Err       error
+}
+
+// Read is the implementation of the reader interface
+func (b *ZBody) Read(p []byte) (int, error) {
+	return b.rawBody.Read(p)
+}
+
+// ReadN read and return n byte of body, and cache them
+func (b *ZBody) ReadN(n int64) []byte {
+	if b.Err != nil {
+		return nil
+	}
+
+	lr := io.LimitReader(b.rawBody, n)
+	tr := io.TeeReader(lr, &(b.buf))
+
+	data, err := ioutil.ReadAll(tr)
+	if err != nil && err != io.EOF {
+		b.Err = err
+		b.ClearCache()
+		b.rawBody.Close()
+		return nil
+	}
+
+	return data
+}
+
+// fillBuffer cache the body content – this is largely used for .String() and .Bytes()
+func (b *ZBody) fillBuffer() {
+	if b.bufCached {
+		return
+	}
+
+	_, err := io.Copy(&b.buf, b.rawBody)
+	b.bufCached = true
+
+	if err != nil && err != io.EOF {
+		b.Err = err
+		b.ClearCache()
+	}
+
+	b.rawBody.Close()
+}
+
+// String return the body in string type
+func (b *ZBody) String() string {
+	if b.Err != nil {
+		return ""
+	}
+
+	b.fillBuffer()
+
+	return b.buf.String()
+}
+
+// Bytes return the body with []byte type
+func (b *ZBody) Bytes() []byte {
+	if b.Err != nil {
+		return nil
+	}
+
+	b.fillBuffer()
+
+	if b.buf.Len() == 0 {
+		return nil
+	}
+
+	return b.buf.Bytes()
+}
+
+// Close close the body. Must be called when the response is used
+func (b *ZBody) Close() error {
+	if b.Err != nil {
+		return b.Err
+	}
+
+	return b.rawBody.Close()
+}
+
+// ClearCache clear the cache of body
+func (b *ZBody) ClearCache() {
+	if b.buf.Len() > 0 {
+		b.buf.Reset()
+	}
+}
 
 // Headers is a wrapper for http.Header
 type Headers map[string][]string
@@ -101,8 +194,8 @@ type Response struct {
 	Status        string
 	ContentLength int64
 	Headers       Headers
+	Body          *ZBody
 	RawResponse   *http.Response
-	Error         error
 	cookies       Cookies
 }
 
@@ -115,48 +208,56 @@ func (resp *Response) Cookies() Cookies {
 	return resp.cookies
 }
 
-// String return the body in string type
-func (resp *Response) String() string {
-	data := resp.read(resp.RawResponse.Body)
-	if data == nil {
-		return ""
-	}
-
-	return string(data)
+// Err returns the first non-EOF error that was encountered by read body.
+func (resp *Response) Err() error {
+	return resp.Body.Err
 }
 
-// Byte return the body with []byte type
-func (resp *Response) Byte() []byte {
-	data := resp.read(resp.RawResponse.Body)
-	return data
-}
-
-// ReadN read and return n byte of body
-func (resp *Response) ReadN(n int64) []byte {
-	data := resp.read(io.LimitReader(resp.RawResponse.Body, n))
-	return data
-}
-
-// Close close the body. Must be called when the response is used
+// Close close the http response body.
 func (resp *Response) Close() error {
-	if resp.Error != nil {
-		return resp.Error
-	}
-
-	return resp.RawResponse.Body.Close()
+	resp.Body.ClearCache()
+	return resp.Body.Close()
 }
 
-func (resp *Response) read(body io.Reader) []byte {
-	if resp.Error != nil {
-		return nil
+// RawHTTPRequest format the http.Request to string.
+// Notice, the order of headers is not strictly consistent
+func (resp *Response) RawHTTPRequest() string {
+	var buf strings.Builder
+	req := resp.RawResponse.Request
+
+	buf.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
+
+	if req.Host != "" {
+		buf.WriteString("Host: " + req.Host + "\r\n")
+	} else {
+		buf.WriteString("Host: " + req.URL.Host + "\r\n")
 	}
 
-	data, err := ioutil.ReadAll(body)
-	if err != nil {
-		resp.Error = err
-		resp.RawResponse.Body.Close()
-		return nil
+	req.Header.Write(&buf)
+	buf.WriteString("\r\n")
+
+	if req.GetBody != nil {
+		rc, err := req.GetBody()
+		if err == nil {
+			io.Copy(&buf, rc)
+			rc.Close()
+		}
 	}
 
-	return data
+	return buf.String()
+}
+
+// RawHTTPResponse format the http.Response to string.
+// Notice, the order of headers is not strictly consistent
+func (resp *Response) RawHTTPResponse() string {
+	var buf strings.Builder
+
+	buf.WriteString(resp.RawResponse.Proto + " " + resp.RawResponse.Status + "\r\n")
+
+	resp.RawResponse.Header.Write(&buf)
+	buf.WriteString("\r\n")
+
+	buf.Write(resp.Body.Bytes())
+
+	return buf.String()
 }

@@ -1,12 +1,7 @@
 package zhttp
 
 import (
-	"io"
-	"mime"
-	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -16,24 +11,7 @@ func escapeQuotes(s string) string {
 	return quoteEscaper.Replace(s)
 }
 
-// FileFromDisk read file from disk and detect mime with filename
-func FileFromDisk(filePath string) (*File, error) {
-	filePath = filepath.Clean(filePath)
-	fd, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	file := &File{
-		Name:     fd.Name(),
-		Contents: fd,
-	}
-	file.Mime = mime.TypeByExtension(filepath.Ext(file.Name))
-
-	return file, nil
-}
-
-// MustProxy convert scheme and url string to P.
+// MustProxy convert scheme and url string to map[string]*url.URL.
 // If there have any error, will panic
 func MustProxy(proxies map[string]string) map[string]*url.URL {
 	if len(proxies) > 0 {
@@ -50,43 +28,23 @@ func MustProxy(proxies map[string]string) map[string]*url.URL {
 	return nil
 }
 
-// RawHTTPRequest format the http.Request to string.
-// Notice, the order of headers is not strictly consistent
-func RawHTTPRequest(req *http.Request) string {
-	var buf strings.Builder
-	buf.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
-
-	if req.Host != "" {
-		buf.WriteString("Host: " + req.Host + "\r\n")
-	} else {
-		buf.WriteString("Host: " + req.URL.Host + "\r\n")
+// CookieMapFromRaw parse a cookie in string format to map[string]string
+func CookieMapFromRaw(rawCookie string) map[string]string {
+	list := strings.Split(rawCookie, ";")
+	if len(list) == 0 {
+		return nil
 	}
 
-	req.Header.Write(&buf)
-	buf.WriteString("\r\n")
+	cookies := make(map[string]string, len(list))
+	for _, item := range list {
+		pairs := strings.SplitN(strings.TrimSpace(item), "=", 2)
 
-	if req.GetBody != nil {
-		rc, err := req.GetBody()
-		if err == nil {
-			io.Copy(&buf, rc)
-			rc.Close()
+		if len(pairs) == 2 {
+			cookies[pairs[0]] = pairs[1]
+		} else {
+			cookies[pairs[0]] = ""
 		}
 	}
 
-	return buf.String()
-}
-
-// RawHTTPResponse format the http.Response to string.
-// Notice, the order of headers is not strictly consistent
-func RawHTTPResponse(resp *http.Response) string {
-	var buf strings.Builder
-
-	buf.WriteString(resp.Proto + " " + resp.Status + "\r\n")
-
-	resp.Header.Write(&buf)
-	buf.WriteString("\r\n")
-
-	io.Copy(&buf, resp.Body)
-
-	return buf.String()
+	return cookies
 }

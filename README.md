@@ -79,6 +79,7 @@ import (
 	"time"
 
 	"github.com/greyh4t/zhttp"
+	"github.com/greyh4t/zhttp/tools"
 )
 
 func main() {
@@ -105,8 +106,8 @@ func main() {
 	log.Println(resp.StatusCode, resp.Status, resp.ContentLength)
 	log.Println(resp.Headers.String())
 	log.Println(resp.Cookies().String())
-	log.Println(zhttp.RawHTTPRequest(resp.RawResponse.Request))
-	log.Println(resp.String())
+	log.Println(resp.RawHTTPRequest())
+	log.Println(resp.Body.String())
 	resp.Close()
 
 	// 请求2 post表单
@@ -137,7 +138,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	body := resp.Byte()
+	body := resp.Body.Bytes()
 	if resp.Error != nil {
 		log.Fatal(resp.Error)
 	}
@@ -196,12 +197,12 @@ func main() {
 	resp.Close()
 
 	// 请求6 文件上传
-	file1, err := zhttp.FileFromDisk("file1.txt")
+	file1, err := tools.FileFromDisk("file1.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	file2, err := zhttp.FileFromDisk("file2.txt")
+	file2, err := tools.FileFromDisk("file2.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

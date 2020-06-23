@@ -149,6 +149,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
 		Headers:       Headers(resp.Header),
+		Body:          &ZBody{rawBody: resp.Body},
 	}, nil
 }
 
