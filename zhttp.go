@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"runtime"
+	"time"
 
 	"github.com/greyh4t/dnscache"
 	"golang.org/x/net/publicsuffix"
@@ -115,7 +116,9 @@ func InitDefaultClient(options *HTTPOptions) {
 
 func prepareDefaultZ() {
 	if defaultZ == nil {
-		defaultZ = New(nil)
+		defaultZ = New(&HTTPOptions{
+			Timeout: time.Second * 30,
+		})
 	}
 }
 
