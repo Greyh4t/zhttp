@@ -2,9 +2,11 @@ package zhttp
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strings"
 )
 
@@ -223,18 +225,10 @@ func (resp *Response) Close() error {
 // Notice, the order of headers is not strictly consistent
 func (resp *Response) RawHTTPRequest() string {
 	var buf strings.Builder
-	req := resp.RawResponse.Request
+	req := resp.RawResponse.Request.Clone(context.Background())
 
-	buf.WriteString(req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n")
-
-	if req.Host != "" {
-		buf.WriteString("Host: " + req.Host + "\r\n")
-	} else {
-		buf.WriteString("Host: " + req.URL.Host + "\r\n")
-	}
-
-	req.Header.Write(&buf)
-	buf.WriteString("\r\n")
+	data, _ := httputil.DumpRequestOut(req, false)
+	buf.Write(data)
 
 	if req.GetBody != nil {
 		rc, err := req.GetBody()
@@ -252,10 +246,8 @@ func (resp *Response) RawHTTPRequest() string {
 func (resp *Response) RawHTTPResponse() string {
 	var buf strings.Builder
 
-	buf.WriteString(resp.RawResponse.Proto + " " + resp.RawResponse.Status + "\r\n")
-
-	resp.RawResponse.Header.Write(&buf)
-	buf.WriteString("\r\n")
+	data, _ := httputil.DumpResponse(resp.RawResponse, false)
+	buf.Write(data)
 
 	buf.Write(resp.Body.Bytes())
 
