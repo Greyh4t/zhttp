@@ -119,6 +119,12 @@ func prepareDefaultZ() {
 	}
 }
 
+// NewSession generate an default client that will handle session for all requests
+func NewSession() *Session {
+	prepareDefaultZ()
+	return defaultZ.NewSession()
+}
+
 func Request(method, url string, options *ReqOptions) (*Response, error) {
 	prepareDefaultZ()
 	return defaultZ.doRequest(method, url, options, nil)

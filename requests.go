@@ -38,13 +38,7 @@ func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *htt
 
 // createTransport create a global *http.Transport for all http client
 func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transport {
-	transport := &http.Transport{
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	transport.MaxIdleConnsPerHost = options.MaxIdleConnsPerHost
 	transport.MaxConnsPerHost = options.MaxConnsPerHost
@@ -64,18 +58,6 @@ func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transpor
 		transport.TLSHandshakeTimeout = options.TLSHandshakeTimeout
 	}
 
-	dialer := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}
-	if options.DialTimeout > 0 {
-		dialer.Timeout = options.DialTimeout
-	}
-	if options.KeepAlive > 0 {
-		dialer.KeepAlive = options.KeepAlive
-	}
-
 	transport.Proxy = func(req *http.Request) (*url.URL, error) {
 		reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
 		if ok && len(reqOptions.Proxies) > 0 {
@@ -89,6 +71,18 @@ func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transpor
 		}
 		// get proxy from environment
 		return http.ProxyFromEnvironment(req)
+	}
+
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}
+	if options.DialTimeout > 0 {
+		dialer.Timeout = options.DialTimeout
+	}
+	if options.KeepAlive > 0 {
+		dialer.KeepAlive = options.KeepAlive
 	}
 
 	if cache != nil {
@@ -217,7 +211,9 @@ func (z *Zhttp) parseHostIP(req *http.Request, options *ReqOptions) (string, boo
 
 // addHeaders handle custom headers
 func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
-	req.Header.Set("User-Agent", "Zhttp/2.0")
+	if !(z.options.NoUA || options.NoUA) {
+		req.Header.Set("User-Agent", "Zhttp/2.0")
+	}
 
 	for key, value := range z.options.Headers {
 		req.Header.Set(key, value)
