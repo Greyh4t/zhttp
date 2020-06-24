@@ -208,7 +208,10 @@ func (z *Zhttp) parseHostIP(req *http.Request, options *ReqOptions) (string, boo
 
 // addHeaders handle custom headers
 func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
-	if !(z.options.NoUA || options.NoUA) {
+	if z.options.NoUA || options.NoUA {
+		// set empty string to prevent go client set default UA
+		req.Header.Set("User-Agent", "")
+	} else {
 		req.Header.Set("User-Agent", "Zhttp/2.0")
 	}
 
