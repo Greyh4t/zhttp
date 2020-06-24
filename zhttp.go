@@ -70,7 +70,7 @@ func ensureResourcesFinalized(zhttp *Zhttp, finalizeDNSCache bool) {
 
 // NewSession generate an client that will handle session for all requests
 func (z *Zhttp) NewSession() *Session {
-	s := &Session{Zhttp: z}
+	s := &Session{z: z}
 	s.CookieJar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	return s
 }
