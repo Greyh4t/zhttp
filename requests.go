@@ -3,7 +3,6 @@ package zhttp
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,26 +13,27 @@ import (
 
 var ctxOptionKey = struct{}{}
 
-func checkRedirect(req *http.Request, via []*http.Request) error {
-	reqOptions, ok := req.Context().Value(ctxOptionKey).(*ReqOptions)
-	if ok && reqOptions.DisableRedirect {
-		return http.ErrUseLastResponse
-	}
-
-	if len(via) >= 10 {
-		return errors.New("stopped after 10 redirects")
-	}
-	return nil
+func disableRedirect(req *http.Request, via []*http.Request) error {
+	return http.ErrUseLastResponse
 }
 
 // buildClient make a new client
-func (z *Zhttp) buildClient(options *HTTPOptions, cookieJar http.CookieJar) *http.Client {
-	return &http.Client{
-		Transport:     z.transport,
-		Jar:           cookieJar,
-		Timeout:       options.Timeout,
-		CheckRedirect: checkRedirect,
+func (z *Zhttp) buildClient(httpOptions *HTTPOptions, reqOptions *ReqOptions, cookieJar http.CookieJar) *http.Client {
+	client := &http.Client{
+		Transport: z.transport,
+		Jar:       cookieJar,
+		Timeout:   httpOptions.Timeout,
 	}
+
+	if reqOptions.Timeout > 0 {
+		client.Timeout = reqOptions.Timeout
+	}
+
+	if reqOptions.DisableRedirect {
+		client.CheckRedirect = disableRedirect
+	}
+
+	return client
 }
 
 // createTransport create a global *http.Transport for all http client
@@ -123,10 +123,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 	z.addCookies(req, options)
 	z.addHeaders(req, options)
 
-	client := z.buildClient(z.options, jar)
-	if options.Timeout > 0 {
-		client.Timeout = options.Timeout
-	}
+	client := z.buildClient(z.options, options, jar)
 
 	resp, err := client.Do(req)
 	if set {
@@ -149,7 +146,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 
 // buildRequest build request with body and other
 func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options *ReqOptions) (*http.Request, error) {
-	if options.DisableRedirect || len(options.Proxies) > 0 {
+	if len(options.Proxies) > 0 {
 		ctx = context.WithValue(ctx, ctxOptionKey, options)
 	}
 
