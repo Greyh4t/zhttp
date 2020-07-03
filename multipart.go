@@ -33,9 +33,20 @@ func Multipart(files []*File, form map[string]string) Body {
 	}
 }
 
+// MultipartStream used to create Body object
+// Use streaming upload to prevent all files from being loaded into memory
+func MultipartStream(files []*File, form map[string]string) Body {
+	return &MultipartBody{
+		Files:  files,
+		Form:   form,
+		Stream: true,
+	}
+}
+
 type MultipartBody struct {
-	Files []*File
-	Form  map[string]string
+	Files  []*File
+	Form   map[string]string
+	Stream bool
 }
 
 func (body *MultipartBody) Close() {
@@ -46,27 +57,72 @@ func (body *MultipartBody) Close() {
 	}
 }
 
-func (body *MultipartBody) onlyFormReader() (io.Reader, string, error) {
-	var buf bytes.Buffer
-	multipartWriter := multipart.NewWriter(&buf)
-
-	for key, value := range body.Form {
-		multipartWriter.WriteField(key, value)
+func (body *MultipartBody) Content() (io.Reader, string, error) {
+	if body.Stream {
+		return body.streamContent()
 	}
 
-	err := multipartWriter.Close()
+	var buf bytes.Buffer
+	multipartWriter := multipart.NewWriter(&buf)
+	err := body.writeMultipart(multipartWriter)
 	if err != nil {
+		body.Close()
 		return nil, "", err
 	}
 
 	return &buf, multipartWriter.FormDataContentType(), nil
 }
 
-func (body *MultipartBody) Content() (io.Reader, string, error) {
-	if len(body.Files) == 0 {
-		return body.onlyFormReader()
+func (body *MultipartBody) writeMultipart(multipartWriter *multipart.Writer) (err error) {
+	for i, f := range body.Files {
+		fieldName := f.FieldName
+
+		if fieldName == "" {
+			if len(body.Files) > 1 {
+				fieldName = "file" + strconv.Itoa(i+1)
+			} else {
+				fieldName = "file"
+			}
+		}
+
+		var writer io.Writer
+		if f.Mime != "" {
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+				escapeQuotes(fieldName), escapeQuotes(f.Name)))
+			h.Set("Content-Type", f.Mime)
+			writer, err = multipartWriter.CreatePart(h)
+		} else {
+			writer, err = multipartWriter.CreateFormFile(fieldName, f.Name)
+		}
+		if err != nil {
+			return
+		}
+
+		if f.Contents != nil {
+			_, err = io.Copy(writer, f.Contents)
+			if err != nil && err != io.EOF {
+				return
+			}
+			err = f.Contents.Close()
+			if err != nil {
+				return
+			}
+		}
 	}
 
+	// Populate the other parts of the form (if there are any)
+	for key, value := range body.Form {
+		multipartWriter.WriteField(key, value)
+	}
+
+	// Close just write last boundary, so we only need to close it when all processes successful.
+	err = multipartWriter.Close()
+
+	return
+}
+
+func (body *MultipartBody) streamContent() (io.Reader, string, error) {
 	pr, pw := io.Pipe()
 	multipartWriter := multipart.NewWriter(pw)
 
@@ -74,57 +130,13 @@ func (body *MultipartBody) Content() (io.Reader, string, error) {
 		var err error
 		defer func() {
 			if err != nil {
-				pw.CloseWithError(err)
 				body.Close()
+				pw.CloseWithError(err)
 			} else {
 				pw.Close()
 			}
 		}()
-
-		for i, f := range body.Files {
-			fieldName := f.FieldName
-
-			if fieldName == "" {
-				if len(body.Files) > 1 {
-					fieldName = "file" + strconv.Itoa(i+1)
-				} else {
-					fieldName = "file"
-				}
-			}
-
-			var writer io.Writer
-			if f.Mime != "" {
-				h := make(textproto.MIMEHeader)
-				h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-					escapeQuotes(fieldName), escapeQuotes(f.Name)))
-				h.Set("Content-Type", f.Mime)
-				writer, err = multipartWriter.CreatePart(h)
-			} else {
-				writer, err = multipartWriter.CreateFormFile(fieldName, f.Name)
-			}
-			if err != nil {
-				return
-			}
-
-			if f.Contents != nil {
-				_, err = io.Copy(writer, f.Contents)
-				if err != nil && err != io.EOF {
-					return
-				}
-				err = f.Contents.Close()
-				if err != nil {
-					return
-				}
-			}
-		}
-
-		// Populate the other parts of the form (if there are any)
-		for key, value := range body.Form {
-			multipartWriter.WriteField(key, value)
-		}
-
-		// Close just write last boundary, so we only need to close it when all processes successful.
-		err = multipartWriter.Close()
+		err = body.writeMultipart(multipartWriter)
 	}()
 
 	return pr, multipartWriter.FormDataContentType(), nil
