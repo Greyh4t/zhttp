@@ -85,20 +85,28 @@ func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transpor
 		dialer.KeepAlive = options.KeepAlive
 	}
 
-	if cache != nil {
-		transport.DialContext = func(ctx context.Context, network string, address string) (net.Conn, error) {
+	transport.DialContext = makeDialContext(dialer, cache)
+
+	return transport
+}
+
+func makeDialContext(dialer *net.Dialer, cache *dnscache.Cache) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network string, address string) (net.Conn, error) {
+		reqOptions, ok := ctx.Value(ctxOptionKey).(*ReqOptions)
+		if ok && reqOptions.HostIP != "" {
+			_, port, _ := net.SplitHostPort(address)
+			address = net.JoinHostPort(reqOptions.HostIP, port)
+		} else if cache != nil {
 			host, port, _ := net.SplitHostPort(address)
 			ip, err := cache.FetchOneV4String(host)
 			if err != nil {
 				return nil, err
 			}
-			return dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			address = net.JoinHostPort(ip, port)
 		}
-	} else {
-		transport.DialContext = dialer.DialContext
-	}
 
-	return transport
+		return dialer.DialContext(ctx, network, address)
+	}
 }
 
 // doRequest send request with http client to server
@@ -118,17 +126,12 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	oldHost, set := z.parseHostIP(req, options)
-
 	z.addCookies(req, options)
 	z.addHeaders(req, options)
 
 	client := z.buildClient(z.options, options, jar)
 
 	resp, err := client.Do(req)
-	if set {
-		req.URL.Host = oldHost
-	}
 
 	if err != nil {
 		return nil, err
@@ -146,7 +149,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 
 // buildRequest build request with body and other
 func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options *ReqOptions) (*http.Request, error) {
-	if len(options.Proxies) > 0 {
+	if len(options.Proxies) > 0 || options.HostIP != "" {
 		ctx = context.WithValue(ctx, ctxOptionKey, options)
 	}
 
@@ -191,30 +194,11 @@ func (z *Zhttp) buildURL(rawURL string, options *ReqOptions) (string, error) {
 	return rawURL, nil
 }
 
-// parseHostIP handle custom dns resolution
-func (z *Zhttp) parseHostIP(req *http.Request, options *ReqOptions) (string, bool) {
-	if options.HostIP != "" {
-		oldHost := req.URL.Host
-		port := req.URL.Port()
-		if port != "" {
-			req.URL.Host = options.HostIP + ":" + port
-		} else {
-			req.URL.Host = options.HostIP
-		}
-		return oldHost, true
-	}
-	return "", false
-}
-
 // addHeaders handle custom headers
 func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
-	if z.options.NoUA || options.NoUA {
-		// set empty string to prevent go client set default UA
-		req.Header.Set("User-Agent", "")
-	} else {
-		req.Header.Set("User-Agent", "Zhttp/2.0")
-	}
+	z.setDefaultHeaders(req, options)
 
+	// set global headers
 	for key, value := range z.options.Headers {
 		req.Header.Set(key, value)
 	}
@@ -223,6 +207,7 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 		req.Header.Set("User-Agent", z.options.UserAgent)
 	}
 
+	// set headers of each request
 	for key, value := range options.Headers {
 		req.Header.Set(key, value)
 	}
@@ -245,6 +230,15 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 
 	if options.UserAgent != "" {
 		req.Header.Set("User-Agent", options.UserAgent)
+	}
+}
+
+func (z *Zhttp) setDefaultHeaders(req *http.Request, options *ReqOptions) {
+	if z.options.NoUA || options.NoUA {
+		// set empty string to prevent go client set default UA
+		req.Header.Set("User-Agent", "")
+	} else {
+		req.Header.Set("User-Agent", "Zhttp/2.0")
 	}
 }
 
