@@ -106,7 +106,7 @@ func main() {
 	log.Println(resp.StatusCode, resp.Status, resp.ContentLength)
 	log.Println(resp.Headers.String())
 	log.Println(resp.Cookies().String())
-	log.Println(resp.RawHTTPRequest())
+	log.Println(resp.DumpRequest())
 	log.Println(resp.Body.String())
 	resp.Close()
 

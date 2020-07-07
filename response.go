@@ -221,9 +221,9 @@ func (resp *Response) Close() error {
 	return resp.Body.Close()
 }
 
-// RawHTTPRequest format the last http.Request to string.
+// DumpRequest format the last http.Request to string.
 // Notice, the order of headers is not strictly consistent
-func (resp *Response) RawHTTPRequest() string {
+func (resp *Response) DumpRequest() string {
 	var buf strings.Builder
 	req := resp.RawResponse.Request.Clone(context.Background())
 
@@ -241,9 +241,9 @@ func (resp *Response) RawHTTPRequest() string {
 	return buf.String()
 }
 
-// RawHTTPResponse format the last http.Response to string.
+// DumpResponse format the last http.Response to string.
 // Notice, the order of headers is not strictly consistent
-func (resp *Response) RawHTTPResponse() string {
+func (resp *Response) DumpResponse() string {
 	var buf strings.Builder
 
 	data, _ := httputil.DumpResponse(resp.RawResponse, false)
