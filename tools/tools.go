@@ -92,9 +92,11 @@ func SaveToFile(r io.Reader, filename string) error {
 		return err
 	}
 
-	defer f.Close()
+	_, err = io.Copy(f, r)
+	f.Close()
 
-	if _, err := io.Copy(f, r); err != nil && err != io.EOF {
+	if err != nil {
+		os.Remove(filename)
 		return err
 	}
 
