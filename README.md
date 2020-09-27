@@ -2,7 +2,7 @@
 
 zhttp 是一个对 net/http 标准库的封装，参考了 python 中著名的 requests 库，支持标准库中的连接池，支持dns缓存，支持流式文件上传，支持多种body格式，很多代码及思路来自[grequests](https://github.com/levigross/grequests)
 
-[![GoDoc](https://godoc.org/github.com/greyh4t/zhttp?status.svg)](https://godoc.org/github.com/greyh4t/zhttp)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/greyh4t/zhttp)](https://pkg.go.dev/github.com/greyh4t/zhttp)
 
 ## Installation
 
