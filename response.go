@@ -20,6 +20,10 @@ type ZBody struct {
 
 // Read is the implementation of the reader interface
 func (b *ZBody) Read(p []byte) (int, error) {
+	if b.Err != nil {
+		return 0, b.Err
+	}
+
 	return b.rawBody.Read(p)
 }
 
@@ -208,6 +212,11 @@ func (resp *Response) Cookies() Cookies {
 	}
 
 	return resp.cookies
+}
+
+// Ok validates that the server returned a 2xx code.
+func (resp *Response) Ok() bool {
+	return resp.StatusCode >= 200 && resp.StatusCode < 300
 }
 
 // Err returns the first non-EOF error that was encountered by read body.
