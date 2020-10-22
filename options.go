@@ -27,6 +27,7 @@ type HTTPOptions struct {
 	Cookies map[string]string
 
 	// Headers uses to set custom HTTP headers to every request
+	// The header name is case-sensitive
 	Headers map[string]string
 
 	// Proxies is a map in the following format
@@ -137,6 +138,7 @@ type ReqOptions struct {
 	Cookies map[string]string
 
 	// Headers uses to set custom HTTP headers to the request
+	// The header name is case-sensitive
 	Headers map[string]string
 
 	// Host allows you to set an arbitrary custom host

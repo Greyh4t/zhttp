@@ -99,6 +99,15 @@ func Form(body map[string]string) Body {
 	}
 }
 
+// FormValues used to create Body from map, and set form Content-Type
+// The difference with form is that it supports setting multiple parameters with the same name
+func FormValues(body map[string][]string) Body {
+	return &StringBody{
+		ContentType: "application/x-www-form-urlencoded",
+		Body:        url.Values(body).Encode(),
+	}
+}
+
 type ReaderBody struct {
 	ContentType string
 	Body        io.Reader

@@ -199,18 +199,14 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 	z.setDefaultHeaders(req, options)
 
 	// set global headers
-	for key, value := range z.options.Headers {
-		req.Header.Set(key, value)
-	}
+	z.setHeaders(req, z.options.Headers)
 
 	if z.options.UserAgent != "" {
 		req.Header.Set("User-Agent", z.options.UserAgent)
 	}
 
 	// set headers of each request
-	for key, value := range options.Headers {
-		req.Header.Set(key, value)
-	}
+	z.setHeaders(req, options.Headers)
 
 	if options.Host != "" {
 		req.Host = options.Host
@@ -239,6 +235,12 @@ func (z *Zhttp) setDefaultHeaders(req *http.Request, options *ReqOptions) {
 		req.Header.Set("User-Agent", "")
 	} else {
 		req.Header.Set("User-Agent", "Zhttp/2.0")
+	}
+}
+
+func (z *Zhttp) setHeaders(req *http.Request, headers map[string]string) {
+	for key, value := range headers {
+		req.Header[key] = []string{value}
 	}
 }
 
