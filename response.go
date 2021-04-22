@@ -214,8 +214,8 @@ func (resp *Response) Cookies() Cookies {
 	return resp.cookies
 }
 
-// Ok validates that the server returned a 2xx code.
-func (resp *Response) Ok() bool {
+// OK validates that the server returned a 2xx code.
+func (resp *Response) OK() bool {
 	return resp.StatusCode >= 200 && resp.StatusCode < 300
 }
 
