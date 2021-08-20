@@ -39,7 +39,10 @@ type HTTPOptions struct {
 	// doesn't validate if a certificate has been revoked
 	InsecureSkipVerify bool
 
-	// Timeout is the maximum amount of time a whole request(include dial / request / redirect) will wait
+	// RequestTimeout is the maximum amount of time a whole request(include dial / request / redirect) will wait
+	RequestTimeout time.Duration
+
+	// Timeout is the time that the client will wait between bytes sent from the server.
 	Timeout time.Duration
 
 	// DialTimeout is the maximum amount of time a dial will wait for a connect to complete
@@ -109,8 +112,11 @@ type HTTPOptions struct {
 
 // ReqOptions is the options for single request
 type ReqOptions struct {
-	// Timeout is the maximum amount of time a whole request(include dial / request / redirect) will wait.
+	// RequestTimeout is the maximum amount of time a whole request(include dial / request / redirect) will wait.
 	// if non-zero, overwrite HTTPOptions.Timeout in current request.
+	RequestTimeout time.Duration
+
+	// Timeout is the time that the client will wait between bytes sent from the server.
 	Timeout time.Duration
 
 	// ContentType allows you to set an arbitrary custom content type

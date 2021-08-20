@@ -3,6 +3,7 @@ package zhttp
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -22,11 +23,11 @@ func (z *Zhttp) buildClient(httpOptions *HTTPOptions, reqOptions *ReqOptions, co
 	client := &http.Client{
 		Transport: z.transport,
 		Jar:       cookieJar,
-		Timeout:   httpOptions.Timeout,
+		Timeout:   httpOptions.RequestTimeout,
 	}
 
-	if reqOptions.Timeout > 0 {
-		client.Timeout = reqOptions.Timeout
+	if reqOptions.RequestTimeout > 0 {
+		client.Timeout = reqOptions.RequestTimeout
 	}
 
 	if reqOptions.DisableRedirect {
@@ -76,12 +77,11 @@ func createTransport(options *HTTPOptions, cache *dnscache.Cache) *http.Transpor
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
-		DualStack: true,
 	}
 	if options.DialTimeout > 0 {
 		dialer.Timeout = options.DialTimeout
 	}
-	if options.KeepAlive > 0 {
+	if options.KeepAlive != 0 {
 		dialer.KeepAlive = options.KeepAlive
 	}
 
@@ -120,9 +120,10 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	req, err := z.buildRequest(ctx, method, rawURL, options)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -131,9 +132,14 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 
 	client := z.buildClient(z.options, options, jar)
 
-	resp, err := client.Do(req)
+	timeout := z.options.Timeout
+	if options.Timeout > 0 {
+		timeout = options.Timeout
+	}
 
+	resp, err := z.do(client, req, cancel, timeout)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -143,8 +149,29 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
 		Headers:       Headers(resp.Header),
-		Body:          &ZBody{rawBody: resp.Body},
+		Body: &ZBody{
+			rawBody: &ReaderWithCancel{
+				rc:      resp.Body,
+				cancel:  cancel,
+				timeout: timeout,
+			},
+		},
 	}, nil
+}
+
+func (z *Zhttp) do(client *http.Client, req *http.Request, cancel context.CancelFunc,
+	timeout time.Duration) (*http.Response, error) {
+	if timeout > 0 {
+		timer := time.AfterFunc(timeout, cancel)
+		resp, err := client.Do(req)
+		timer.Stop()
+		if err == context.Canceled {
+			err = fmt.Errorf("%w (timeout exceeded while send request)", err)
+		}
+		return resp, err
+	}
+
+	return client.Do(req)
 }
 
 // buildRequest build request with body and other
