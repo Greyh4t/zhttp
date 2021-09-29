@@ -14,8 +14,8 @@ type File struct {
 	// We use this to guess the mimetype as well as pass it onto the server
 	Name string
 
-	// Contents is happy as long as you pass it a io.ReadCloser (which most file use anyways)
-	Contents io.ReadCloser
+	// Content is happy as long as you pass it a io.ReadCloser (which most file use anyways)
+	Content io.ReadCloser
 
 	// FieldName is form field name
 	FieldName string
@@ -51,8 +51,8 @@ type MultipartBody struct {
 
 func (body *MultipartBody) Close() {
 	for _, f := range body.Files {
-		if f.Contents != nil {
-			f.Contents.Close()
+		if f.Content != nil {
+			f.Content.Close()
 		}
 	}
 }
@@ -65,8 +65,8 @@ func (body *MultipartBody) Content() (io.Reader, string, error) {
 	var buf bytes.Buffer
 	multipartWriter := multipart.NewWriter(&buf)
 	err := body.writeMultipart(multipartWriter)
+	body.Close()
 	if err != nil {
-		body.Close()
 		return nil, "", err
 	}
 
@@ -99,12 +99,12 @@ func (body *MultipartBody) writeMultipart(multipartWriter *multipart.Writer) (er
 			return
 		}
 
-		if f.Contents != nil {
-			_, err = io.Copy(writer, f.Contents)
+		if f.Content != nil {
+			_, err = io.Copy(writer, f.Content)
 			if err != nil && err != io.EOF {
 				return
 			}
-			err = f.Contents.Close()
+			err = f.Content.Close()
 			if err != nil {
 				return
 			}
@@ -113,7 +113,10 @@ func (body *MultipartBody) writeMultipart(multipartWriter *multipart.Writer) (er
 
 	// Populate the other parts of the form (if there are any)
 	for key, value := range body.Form {
-		multipartWriter.WriteField(key, value)
+		err = multipartWriter.WriteField(key, value)
+		if err != nil {
+			return
+		}
 	}
 
 	// Close just write last boundary, so we only need to close it when all processes successful.
@@ -127,16 +130,13 @@ func (body *MultipartBody) streamContent() (io.Reader, string, error) {
 	multipartWriter := multipart.NewWriter(pw)
 
 	go func() {
-		var err error
-		defer func() {
-			if err != nil {
-				body.Close()
-				pw.CloseWithError(err)
-			} else {
-				pw.Close()
-			}
-		}()
-		err = body.writeMultipart(multipartWriter)
+		err := body.writeMultipart(multipartWriter)
+		if err != nil {
+			pw.CloseWithError(err)
+		} else {
+			pw.Close()
+		}
+		body.Close()
 	}()
 
 	return pr, multipartWriter.FormDataContentType(), nil

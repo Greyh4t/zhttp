@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -15,6 +14,7 @@ type ZBody struct {
 	rawBody   io.ReadCloser
 	buf       bytes.Buffer
 	bufCached bool
+	cancel    context.CancelFunc
 	Err       error
 }
 
@@ -36,11 +36,11 @@ func (b *ZBody) ReadN(n int64) []byte {
 	lr := io.LimitReader(b.rawBody, n)
 	tr := io.TeeReader(lr, &(b.buf))
 
-	data, err := ioutil.ReadAll(tr)
+	data, err := io.ReadAll(tr)
 	if err != nil && err != io.EOF {
 		b.Err = err
 		b.ClearCache()
-		b.rawBody.Close()
+		b.closeBody()
 		return nil
 	}
 
@@ -61,7 +61,7 @@ func (b *ZBody) fillBuffer() {
 		b.ClearCache()
 	}
 
-	b.rawBody.Close()
+	b.closeBody()
 }
 
 // String return the body in string type
@@ -96,6 +96,11 @@ func (b *ZBody) Close() error {
 		return b.Err
 	}
 
+	return b.closeBody()
+}
+
+func (b *ZBody) closeBody() error {
+	b.cancel()
 	return b.rawBody.Close()
 }
 

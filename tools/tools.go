@@ -70,15 +70,14 @@ func CookiesFromRaw(rawCookie string, domain string) []*http.Cookie {
 
 // FileFromDisk read file from disk and detect mime with filename
 func FileFromDisk(filePath string) (*zhttp.File, error) {
-	filePath = filepath.Clean(filePath)
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 
 	file := &zhttp.File{
-		Name:     fd.Name(),
-		Contents: fd,
+		Name:    fd.Name(),
+		Content: fd,
 	}
 	file.Mime = mime.TypeByExtension(filepath.Ext(file.Name))
 

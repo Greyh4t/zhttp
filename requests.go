@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -109,6 +110,55 @@ func makeDialContext(dialer *net.Dialer, cache *dnscache.Cache) func(ctx context
 	}
 }
 
+func (z *Zhttp) addTimer(req *http.Request, options *ReqOptions, cancel context.CancelFunc) (*time.Timer, time.Duration, func(*http.Request)) {
+	timeout := z.options.Timeout
+	if options.Timeout > 0 {
+		timeout = options.Timeout
+	}
+
+	if timeout > 0 {
+		var (
+			recoverReqBody func(*http.Request)
+			timer          = time.AfterFunc(timeout, cancel)
+		)
+
+		if req.Body != nil {
+			req.Body = NewRequestBody(req.Body, timer, timeout)
+
+			getBodyBak := req.GetBody
+			if req.GetBody != nil {
+				req.GetBody = func() (io.ReadCloser, error) {
+					body, err := req.GetBody()
+					if err != nil {
+						return nil, err
+					}
+					return NewRequestBody(body, timer, timeout), nil
+				}
+			}
+
+			recoverReqBody = func(req *http.Request) {
+				for {
+					rcwt, ok := req.Body.(*RequestBody)
+					if ok {
+						req.Body = rcwt.rc
+					}
+
+					if req.Response == nil {
+						break
+					}
+
+					req = req.Response.Request
+				}
+				req.GetBody = getBodyBak
+			}
+		}
+
+		return timer, timeout, recoverReqBody
+	}
+
+	return nil, 0, nil
+}
+
 // doRequest send request with http client to server
 func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.CookieJar) (*Response, error) {
 	if options == nil {
@@ -127,51 +177,49 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
-	z.addCookies(req, options)
-	z.addHeaders(req, options)
-
 	client := z.buildClient(z.options, options, jar)
 
-	timeout := z.options.Timeout
-	if options.Timeout > 0 {
-		timeout = options.Timeout
-	}
+	timer, timeout, recoverReqBody := z.addTimer(req, options, cancel)
 
-	resp, err := z.do(client, req, cancel, timeout)
+	resp, err := z.do(client, req)
+	if timer != nil {
+		timer.Stop()
+	}
 	if err != nil {
 		cancel()
 		return nil, err
 	}
 
-	return &Response{
+	if recoverReqBody != nil {
+		recoverReqBody(resp.Request)
+	}
+
+	response := &Response{
 		RawResponse:   resp,
 		StatusCode:    resp.StatusCode,
 		Status:        resp.Status,
 		ContentLength: resp.ContentLength,
 		Headers:       Headers(resp.Header),
 		Body: &ZBody{
-			rawBody: &ReaderWithCancel{
-				rc:      resp.Body,
-				cancel:  cancel,
-				timeout: timeout,
-			},
+			rawBody: resp.Body,
+			cancel:  cancel,
 		},
-	}, nil
-}
-
-func (z *Zhttp) do(client *http.Client, req *http.Request, cancel context.CancelFunc,
-	timeout time.Duration) (*http.Response, error) {
-	if timeout > 0 {
-		timer := time.AfterFunc(timeout, cancel)
-		resp, err := client.Do(req)
-		timer.Stop()
-		if err == context.Canceled {
-			err = fmt.Errorf("%w (timeout exceeded while send request)", err)
-		}
-		return resp, err
 	}
 
-	return client.Do(req)
+	if timer != nil {
+		response.Body.rawBody = NewResponseBody(resp.Body, timer, timeout)
+	}
+
+	return response, nil
+}
+
+func (z *Zhttp) do(client *http.Client, req *http.Request) (*http.Response, error) {
+	resp, err := client.Do(req)
+	if err == context.Canceled {
+		err = fmt.Errorf("%w (timeout exceeded while send request)", err)
+	}
+
+	return resp, err
 }
 
 // buildRequest build request with body and other
@@ -197,6 +245,9 @@ func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
+
+	z.addCookies(req, options)
+	z.addHeaders(req, options)
 
 	return req, nil
 }
@@ -257,12 +308,7 @@ func (z *Zhttp) addHeaders(req *http.Request, options *ReqOptions) {
 }
 
 func (z *Zhttp) setDefaultHeaders(req *http.Request, options *ReqOptions) {
-	if z.options.NoUA || options.NoUA {
-		// set empty string to prevent go client set default UA
-		req.Header.Set("User-Agent", "")
-	} else {
-		req.Header.Set("User-Agent", "Zhttp/2.0")
-	}
+	req.Header.Set("User-Agent", "Zhttp/2.0")
 }
 
 func (z *Zhttp) setHeaders(req *http.Request, headers map[string]string) {
