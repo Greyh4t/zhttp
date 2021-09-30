@@ -3,6 +3,7 @@ package zhttp
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -215,7 +216,7 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 
 func (z *Zhttp) do(client *http.Client, req *http.Request) (*http.Response, error) {
 	resp, err := client.Do(req)
-	if err == context.Canceled {
+	if errors.Is(err, context.Canceled) {
 		err = fmt.Errorf("%w (timeout exceeded while send request)", err)
 	}
 

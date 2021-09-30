@@ -2,6 +2,7 @@ package zhttp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -26,7 +27,7 @@ func (r *ResponseBody) Read(p []byte) (int, error) {
 	n, err := r.rc.Read(p)
 	r.timer.Stop()
 
-	if err == context.Canceled {
+	if errors.Is(err, context.Canceled) {
 		err = fmt.Errorf("%w (timeout exceeded while read body)", err)
 	}
 
