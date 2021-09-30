@@ -1,8 +1,6 @@
 package zhttp
 
 import (
-	"context"
-	"fmt"
 	"io"
 	"time"
 )
@@ -28,12 +26,7 @@ func (r *RequestBody) Read(p []byte) (int, error) {
 	// 因此在这里开始计时等待读取和写入超时，直到下一次计时器被重置
 	r.timer.Reset(r.timeout)
 
-	n, err := r.rc.Read(p)
-	if err == context.Canceled {
-		err = fmt.Errorf("%w (timeout exceeded while read body)", err)
-	}
-
-	return n, err
+	return r.rc.Read(p)
 }
 
 func (r *RequestBody) Close() error {
