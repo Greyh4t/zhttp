@@ -100,8 +100,9 @@ func (b *ZBody) Close() error {
 }
 
 func (b *ZBody) closeBody() error {
+	err := b.rawBody.Close()
 	b.cancel()
-	return b.rawBody.Close()
+	return err
 }
 
 // ClearCache clear the cache of body

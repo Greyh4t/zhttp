@@ -139,9 +139,9 @@ func (z *Zhttp) addTimer(req *http.Request, options *ReqOptions, cancel context.
 
 			recoverReqBody = func(req *http.Request) {
 				for {
-					rcwt, ok := req.Body.(*RequestBody)
+					rb, ok := req.Body.(*RequestBody)
 					if ok {
-						req.Body = rcwt.rc
+						req.Body = rb.rc
 					}
 
 					if req.Response == nil {
