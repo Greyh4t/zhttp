@@ -117,47 +117,47 @@ func (z *Zhttp) addTimer(req *http.Request, options *ReqOptions, cancel context.
 		timeout = options.Timeout
 	}
 
-	if timeout > 0 {
-		var (
-			recoverReqBody func(*http.Request)
-			timer          = time.AfterFunc(timeout, cancel)
-		)
+	if timeout == 0 {
+		return nil, 0, nil
+	}
 
-		if req.Body != nil {
-			req.Body = NewRequestBody(req.Body, timer, timeout)
+	var (
+		recoverReqBody func(*http.Request)
+		timer          = time.AfterFunc(timeout, cancel)
+	)
 
-			getBodyBak := req.GetBody
-			if req.GetBody != nil {
-				req.GetBody = func() (io.ReadCloser, error) {
-					body, err := req.GetBody()
-					if err != nil {
-						return nil, err
-					}
-					return NewRequestBody(body, timer, timeout), nil
+	if req.Body != nil {
+		req.Body = NewRequestBody(req.Body, timer, timeout)
+
+		getBodyBak := req.GetBody
+		if req.GetBody != nil {
+			req.GetBody = func() (io.ReadCloser, error) {
+				body, err := req.GetBody()
+				if err != nil {
+					return nil, err
 				}
-			}
-
-			recoverReqBody = func(req *http.Request) {
-				for {
-					rb, ok := req.Body.(*RequestBody)
-					if ok {
-						req.Body = rb.rc
-					}
-
-					if req.Response == nil {
-						break
-					}
-
-					req = req.Response.Request
-				}
-				req.GetBody = getBodyBak
+				return NewRequestBody(body, timer, timeout), nil
 			}
 		}
 
-		return timer, timeout, recoverReqBody
+		recoverReqBody = func(req *http.Request) {
+			for {
+				rb, ok := req.Body.(*RequestBody)
+				if ok {
+					req.Body = rb.rc
+				}
+
+				if req.Response == nil {
+					break
+				}
+
+				req = req.Response.Request
+			}
+			req.GetBody = getBodyBak
+		}
 	}
 
-	return nil, 0, nil
+	return timer, timeout, recoverReqBody
 }
 
 // doRequest send request with http client to server
