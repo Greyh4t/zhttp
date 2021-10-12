@@ -178,6 +178,9 @@ func (z *Zhttp) doRequest(method, rawURL string, options *ReqOptions, jar http.C
 		return nil, err
 	}
 
+	z.addCookies(req, options)
+	z.addHeaders(req, options)
+
 	client := z.buildClient(z.options, options, jar)
 
 	timer, timeout, recoverReqBody := z.addTimer(req, options, cancel)
@@ -246,9 +249,6 @@ func (z *Zhttp) buildRequest(ctx context.Context, method, rawURL string, options
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
-
-	z.addCookies(req, options)
-	z.addHeaders(req, options)
 
 	return req, nil
 }
