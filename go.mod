@@ -1,6 +1,6 @@
 module github.com/greyh4t/zhttp
 
-go 1.14
+go 1.18
 
 require (
 	github.com/greyh4t/dnscache v0.0.0-20200422032442-29453c061c08
